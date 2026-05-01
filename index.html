@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Expense Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- GLOBAL LOADING SCREEN -->
+<div id="global-loader" style="position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; transition: opacity 0.4s ease;">
+  <div class="logo-icon" style="width: 60px; height: 60px; font-size: 28px;">₹</div>
+</div>
+
+<!-- AUTH MODAL (With Sign Up Fields) -->
+<!-- <div class="auth-overlay" id="auth-overlay">
+  <div class="auth-card">
+    <div class="auth-title" id="auth-title">Login</div>
+    <div style="text-align:center; color:var(--text2); margin-bottom:24px;">Smart Expense Tracker</div>
+    <div id="auth-error" style="color:var(--red); font-size:12px; margin-bottom:12px; display:none; text-align:center;"></div>
+    
+    <div class="form-group"><input type="email" class="form-input" id="auth-email" placeholder="Email address"></div>
+    <div class="form-group"><input type="password" class="form-input" id="auth-password" placeholder="Password"></div>
+    
+    <div id="signup-fields" style="display:none;">
+      <div class="form-group"><input type="text" class="form-input" id="auth-name" placeholder="Full Name"></div>
+      <div class="form-group"><input type="text" class="form-input" id="auth-college" placeholder="College Name"></div>
+      <div class="form-group">
+        <select class="form-input" id="auth-year" style="color:var(--text2);" onchange="this.style.color='var(--text)'">
+          <option value="" disabled selected>Select Year</option>
+          <option value="1st Year" style="color:var(--text)">1st Year</option>
+          <option value="2nd Year" style="color:var(--text)">2nd Year</option>
+          <option value="3rd Year" style="color:var(--text)">3rd Year</option>
+          <option value="4th Year" style="color:var(--text)">4th Year</option>
+        </select>
+      </div>
+      <div class="form-group"><input type="number" class="form-input" id="auth-budget" placeholder="Monthly Pocket Money (₹)"></div>
+    </div>
+    
+    <button class="btn btn-primary" id="auth-btn" style="width:100%; justify-content:center; margin-bottom:12px;" onclick="window.handleAuth()">Login</button>
+    <div style="text-align:center; font-size:12px; color:var(--text2);">
+      <span id="auth-toggle-text">Don't have an account? </span>
+      <button onclick="window.toggleAuth()" id="auth-toggle-btn" style="background:none; border:none; color:var(--accent); font-weight:bold; cursor:pointer;">Sign Up</button>
+    </div>
+  </div>
+</div> -->
+
+<!-- AUTHENTICATION PAGE -->
+<div class="page active" id="page-auth" style="padding: 0; min-height: 100vh;">
+    <div class="auth-split-layout">
+        
+        <!-- LEFT: Hyper-Focused Form Side -->
+        <div class="auth-form-side">
+            <!-- Subtle background pattern for texture -->
+            <div class="auth-grid-bg"></div>
+
+            <div class="auth-form-container">
+                <!-- Brand Header -->
+                <div class="auth-brand-header">
+                    <div class="auth-logo-mark">₹</div>
+                    <span class="auth-brand-name">Smart Expense</span>
+                </div>
+
+                <!-- Welcome Text -->
+                <div class="auth-titles">
+                    <h2>Initialize Session</h2>
+                    <p>Enter your credentials to access your dashboard.</p>
+                </div>
+
+                <!-- The Form (Ultra Clean) -->
+                <form id="login-form" onsubmit="event.preventDefault();">
+                    <div class="form-group">
+                        <label class="form-label premium-label">Email Address</label>
+                        <input type="email" id="login-email" class="form-input premium-input" placeholder="name@domain.com" required>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 24px; margin-bottom: 32px;">
+                        <label class="form-label premium-label">Master Password</label>
+                        <input type="password" id="login-password" class="form-input premium-input" placeholder="••••••••••••" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block auth-btn-main">
+                        Authenticate <span style="margin-left: 8px;">→</span>
+                    </button>
+                    
+                    <div class="auth-secure-badge">
+                        <span>🔒</span> Secure 256-bit encrypted connection
+                    </div>
+                </form>
+
+                <p class="auth-footer-text">
+                    No access yet? <a href="#" class="accent-link">Request an account</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- RIGHT: Visual/Brand Showcase Side -->
+        <div class="auth-visual-side">
+            <!-- Animated atmospheric glows -->
+            <div class="visual-glow top-glow animated-glow"></div>
+            <div class="visual-glow bottom-glow animated-glow-slow"></div>
+            
+            <!-- Glassmorphism Feature Card with Mini UI -->
+            <div class="glass-feature-card floating-card">
+                <div class="feature-icon">⚡</div>
+                <h3>Financial clarity,<br>engineered.</h3>
+                <p>Deploy absolute discipline over your capital. Track, analyze, and optimize your spending with surgical precision.</p>
+                
+                <!-- Pure CSS Abstract Mockup -->
+                <div class="abstract-mockup">
+                    <div class="mockup-header">
+                        <div class="mockup-icon">📈</div>
+                        <div class="mockup-text-group">
+                            <span class="mockup-title">Capital Growth</span>
+                            <span class="mockup-sub">+12.4% trajectory</span>
+                        </div>
+                    </div>
+                    <div class="mockup-chart">
+                        <div class="mockup-bar" style="height: 30%"></div>
+                        <div class="mockup-bar" style="height: 50%"></div>
+                        <div class="mockup-bar" style="height: 40%"></div>
+                        <div class="mockup-bar" style="height: 70%"></div>
+                        <div class="mockup-bar" style="height: 100%; background: var(--accent); box-shadow: 0 0 12px rgba(0, 229, 160, 0.4);"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- SIGN-UP PAGE -->
+<div class="page" id="page-signup" style="padding: 0; min-height: 100vh;">
+    <div class="auth-split-layout">
+        
+        <!-- LEFT: Hyper-Focused Form Side -->
+        <div class="auth-form-side">
+            <!-- Subtle background pattern for texture -->
+            <div class="auth-grid-bg"></div>
+
+            <div class="auth-form-container">
+                <!-- Brand Header -->
+                <div class="auth-brand-header">
+                    <div class="auth-logo-mark">₹</div>
+                    <span class="auth-brand-name">Smart Expense</span>
+                </div>
+
+                <!-- Welcome Text -->
+                <div class="auth-titles">
+                    <h2>Create your account</h2>
+                    <p>Start engineering your financial future today.</p>
+                </div>
+
+                <!-- The Form (Expanded Data, Clean UI) -->
+                <form id="signup-form" onsubmit="event.preventDefault();">
+                    
+                    <!-- Row 1: Name -->
+                    <div class="form-group">
+                        <label class="form-label premium-label">Full Name</label>
+                        <input type="text" id="signup-name" class="form-input premium-input" placeholder="e.g., Meet Raval" required>
+                    </div>
+
+                    <!-- Row 2: Email -->
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label class="form-label premium-label">Email Address</label>
+                        <input type="email" id="signup-email" class="form-input premium-input" placeholder="name@domain.com" required>
+                    </div>
+
+                    <!-- Row 3: College -->
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label class="form-label premium-label">Institution / College</label>
+                        <input type="text" id="signup-college" class="form-input premium-input" placeholder="e.g., DYPIT Pune" required>
+                    </div>
+
+                    <!-- Row 4: Year & Budget (Side-by-Side Grid) -->
+                    <div class="form-row" style="margin-top: 20px;">
+                        <div class="form-group">
+                            <label class="form-label premium-label">Current Year</label>
+                            <div class="custom-select-wrapper">
+                                <select id="signup-year" class="form-input premium-input" required>
+                                    <option value="" disabled selected>Select...</option>
+                                    <option value="1">1st Year (FE)</option>
+                                    <option value="2">2nd Year (SE)</option>
+                                    <option value="3">3rd Year (TE)</option>
+                                    <option value="4">4th Year (BE)</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label premium-label">Monthly Target</label>
+                            <div class="input-with-prefix">
+                                <span class="prefix">₹</span>
+                                <input type="number" id="signup-budget" class="form-input premium-input" placeholder="15000" style="padding-left: 36px;" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 5: Password -->
+                    <div class="form-group" style="margin-top: 20px; margin-bottom: 32px;">
+                        <label class="form-label premium-label">Master Password</label>
+                        <input type="password" id="signup-password" class="form-input premium-input" placeholder="••••••••••••" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block auth-btn-main">
+                        Initialize Account <span style="margin-left: 8px;">→</span>
+                    </button>
+                    
+                    <div class="auth-secure-badge">
+                        <span>🔒</span> Secure 256-bit encrypted connection
+                    </div>
+                </form>
+
+                <p class="auth-footer-text">
+                    Already have access? <a href="#" onclick="window.navigate('auth')" class="accent-link">Sign In</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- RIGHT: Visual/Brand Showcase Side -->
+        <div class="auth-visual-side">
+            <!-- Animated atmospheric glows (Colors inverted for Signup) -->
+            <div class="visual-glow top-glow animated-glow" style="background: #6bcbff;"></div>
+            <div class="visual-glow bottom-glow animated-glow-slow" style="background: var(--accent);"></div>
+            
+            <!-- Glassmorphism Feature Card -->
+            <div class="glass-feature-card floating-card">
+                <div class="feature-icon">🎯</div>
+                <h3>Take control from<br>day one.</h3>
+                <p>Stop wondering where your money went. Tell it where to go. Set limits, track velocity, and build absolute wealth.</p>
+                
+                <!-- Pure CSS Abstract Mockup: Budget Allocation -->
+                <div class="abstract-mockup">
+                    <div class="mockup-header">
+                        <div class="mockup-icon" style="color: #6bcbff; background: rgba(107, 203, 255, 0.1);">💼</div>
+                        <div class="mockup-text-group">
+                            <span class="mockup-title">Smart Allocation</span>
+                            <span class="mockup-sub">Auto-categorized tracking</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Segmented Allocation Bar -->
+                    <div style="display: flex; gap: 4px; height: 12px; margin-top: 20px; border-radius: 6px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                        <div style="flex: 4; background: var(--accent);"></div>
+                        <div style="flex: 3; background: #6bcbff;"></div>
+                        <div style="flex: 2; background: #f59e0b;"></div>
+                        <div style="flex: 1; background: #ff6b6b;"></div>
+                    </div>
+                    
+                    <!-- Legend -->
+                    <div style="display: flex; justify-content: space-between; margin-top: 12px; font-size: 11px; color: var(--text3); font-weight: 600;">
+                        <span>Needs 40%</span>
+                        <span>Invest 30%</span>
+                        <span>Wants 30%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<div class="app" id="app" style="display:none">
+  
+  <!-- 1. SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">₹</div>
+      <div>
+        <div class="logo-text">Smart Expense</div>
+        <div class="logo-sub">Tracker</div>
+      </div>
+    </div>
+
+    <div class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <div class="nav-item active" onclick="window.navigate('dashboard', this)">📊 Dashboard</div>
+      <div class="nav-item" onclick="window.navigate('transactions', this)">💸 Transactions</div>
+      <div class="nav-item" onclick="window.navigate('budget', this)">🎯 Budget</div>
+      <div class="nav-item" onclick="window.navigate('accounts', this)">🏢 Accounts</div>
+      <div class="nav-section-label" style="margin-top: 16px;">Analytics</div>
+      <div class="nav-item" onclick="window.navigate('analytics', this)">📈 Analytics</div>
+      <div class="nav-item" onclick="window.navigate('profile', this)">👤 Profile</div>
+    </div>
+    
+    <div style="padding: 16px; border-top: 1px solid var(--border); margin-top: auto;">
+      <div class="sidebar-user-card" onclick="window.navigate('profile', this)">
+        <div class="user-avatar-sm" id="nav-avatar">M</div>
+        <div class="user-info-sm">
+          <div class="user-name-sm" id="nav-name">Meet Raval</div>
+          <div class="user-meta-sm" id="nav-meta">DYPIT, Pimpri • 3rd Year</div>
+        </div>
+        <div class="user-settings-icon">⚙️</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 2. MAIN CONTENT AREA -->
+  <div class="main">
+    
+    <!-- 3. TOPBAR (Must be right here!) -->
+    <div class="topbar">
+      <div>
+        <div class="page-title" id="page-title">Dashboard</div>
+        <div class="page-subtitle" id="page-subtitle">Welcome back! 👋</div>
+      </div>
+      
+      <!-- Theme Toggle & Add Button -->
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <button class="btn btn-ghost" id="theme-toggle" onclick="window.toggleTheme()" style="width: 42px; height: 42px; padding: 0; justify-content: center; font-size: 18px; border-radius: 50%;">☀️</button>
+        <button class="btn btn-primary" onclick="window.openModal('add-txn-modal')">+ Add Transaction</button>
+      </div>
+    </div>
+
+    <!-- 4. PAGE CONTENT -->
+    <div class="content">
+      
+      <!-- DASHBOARD PAGE -->
+      <div class="page active" id="page-dashboard">
+        
+        <!-- 4 Stats Cards (Matching Image 1) -->
+        <div class="stats-grid">
+          <div class="stat-card green">
+            <div class="stat-header"><span class="stat-label">Total Balance</span><div class="stat-icon green">💰</div></div>
+            <div class="stat-value" id="stat-balance">₹0</div>
+            <span class="stat-change up" id="stat-balance-sub">Calculated from total</span>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-header"><span class="stat-label">Monthly Spent</span><div class="stat-icon red">💳</div></div>
+            <div class="stat-value" id="stat-spent">₹0</div>
+            <span class="stat-change down" id="stat-spent-sub">All expenses</span>
+          </div>
+          <div class="stat-card purple">
+            <div class="stat-header"><span class="stat-label">Monthly Income</span><div class="stat-icon purple">📥</div></div>
+            <div class="stat-value" id="stat-income">₹0</div>
+            <span class="stat-change up" id="stat-income-sub">Pocket money</span>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-header">
+              <span class="stat-label">Budget Used</span>
+              <div class="stat-icon blue" style="background: rgba(107, 203, 255, 0.1); color: #6bcbff;">🎯</div>
+            </div>
+            <div class="stat-value" id="stat-budget-pct">0%</div>
+            <span class="stat-change" id="stat-budget-sub" style="background: rgba(255, 255, 255, 0.05); color: var(--text2);">₹0 remaining</span>
+          </div>
+        </div>
+
+        <!-- Accounts Grid (Matching Image 1) -->
+        <div class="card" style="margin-bottom:24px;">
+          <div class="card-header">
+            <div>
+              <div class="card-title">My Accounts</div>
+              <div class="card-subtitle">Total across all accounts</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <!-- This ID is critical for your JS to find and inject the real data -->
+            <div class="accounts-grid" id="dashboard-accounts-grid"></div>
+          </div>
+        </div>
+
+        <!-- Charts & Budget Row (Updated to Premium Design) -->
+        <div class="grid-2" style="margin-bottom: 24px;">
+          
+          <!-- LEFT: Spending Overview (6 Months) -->
+          <div class="card">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <div class="card-title">Spending Overview</div>
+                <div class="card-subtitle">Last 6 months</div>
+              </div>
+              <div class="chart-toggle-group">
+                <button class="chart-toggle active" id="btn-chart-line" onclick="window.setChartType('line')">Line</button>
+                <button class="chart-toggle" id="btn-chart-bar" onclick="window.setChartType('bar')">Bar</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="chart-wrap" style="height:250px; position: relative; width: 100%;">
+                <canvas id="overviewChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: Budget Status (Compact) -->
+          <div class="card">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div class="card-title">Budget Status</div>
+                <div class="card-subtitle" id="budget-widget-month">Current Month</div>
+              </div>
+              <button class="btn btn-ghost" style="padding: 6px 12px; font-size: 12px;" onclick="window.navigate('budget', document.querySelectorAll('.nav-item')[2])">Manage</button>
+            </div>
+            <div class="card-body" id="dashboard-budget-status" style="display: flex; flex-direction: column; gap: 20px;">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Transactions & Categories Row (Fixed stray div bug) -->
+        <div class="grid-2">
+          
+          <!-- LEFT: Recent Transactions -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Recent Transactions</div>
+                <div class="card-subtitle" id="dashboard-txn-summary">...</div>
+              </div>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <div class="txn-list" id="dashboard-recent-txns"></div>
+            </div>
+          </div>
+          
+          <!-- RIGHT: Category Breakdown -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Category Breakdown</div>
+                <div class="card-subtitle">By spending amount</div>
+              </div>
+            </div>
+            <div class="card-body" style="display: flex; align-items: center; justify-content: center; gap: 30px; padding: 24px;">
+              <div style="height: 160px; width: 160px; position: relative; flex-shrink: 0;">
+                <canvas id="categoryChart"></canvas>
+              </div>
+              <div id="category-legend" style="display: flex; flex-direction: column; gap: 12px; min-width: 100px;">
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+<!-- TRANSACTIONS PAGE -->
+      <div class="page" id="page-transactions">
+        
+        <!-- Controls Row (Search & Export) -->
+        <div class="txn-controls" style="display: flex; gap: 12px; margin-bottom: 20px;">
+          <div class="search-bar" style="flex: 1; display: flex; align-items: center; padding: 0 15px; background: var(--surface2); border-radius: 10px;">
+            <span>🔍</span>
+            <input type="text" id="txn-search" placeholder="Search transactions..." onkeyup="window.applyFilters()" 
+                  style="background: transparent; border: none; color: white; padding: 12px; width: 100%; outline: none;">
+          </div>
+          <button class="btn btn-ghost" onclick="window.exportCSV()" style="height: 45px;">📥 Export</button>
+        </div>
+
+        <!-- Filter Pills -->
+        <div class="filter-pills">
+          <button class="filter-pill active" onclick="window.setFilter('all', this)">All</button>
+          <button class="filter-pill" onclick="window.setFilter('income', this)">Income</button>
+          <button class="filter-pill" onclick="window.setFilter('expense', this)">Expenses</button>
+          <button class="filter-pill" onclick="window.setFilter('food', this)">🍽️ Mess</button>
+          <button class="filter-pill" onclick="window.setFilter('study', this)">📚 Study</button>
+          <button class="filter-pill" onclick="window.setFilter('travel', this)">🚌 Transport</button>
+          <button class="filter-pill" onclick="window.setFilter('shopping', this)">🛍️ Shopping</button>
+        </div>
+
+        <!-- Transactions List Card -->
+        <div class="card" style="min-height: 400px;">
+          <div class="card-header">
+            <div><div class="card-title">All Transactions</div></div>
+            <div class="card-subtitle" id="txn-page-summary" style="font-size: 13px; margin: 0;">0 transactions • Net: ₹0</div>
+          </div>
+          <div class="card-body" style="padding: 10px 12px;">
+            <div class="txn-list" id="page-txns-list"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- BUDGET PAGE -->
+      <div class="page" id="page-budget">
+        
+        <!-- Alert Banner (Hidden by default) -->
+        <div class="budget-alert" id="budget-alert-banner" style="display: none;">
+          <div class="alert-icon">⚠️</div>
+          <div class="alert-content">
+            <div class="alert-title" id="budget-alert-title">Budget Alert</div>
+            <div class="alert-desc" id="budget-alert-desc">You are nearing your limit.</div>
+          </div>
+          <button class="btn-ghost alert-dismiss" onclick="document.getElementById('budget-alert-banner').style.display='none'">Dismiss</button>
+        </div>
+
+        <!-- 3 Summary Cards -->
+        <div class="grid-3" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 24px;">
+          <div class="stat-card" style="padding: 20px;">
+            <div style="font-size: 20px; margin-bottom: 12px;">📋</div>
+            <div class="stat-label" style="margin-bottom: 4px;">Total Budget</div>
+            <div class="stat-value" id="budget-page-total" style="font-size: 24px;">₹0</div>
+          </div>
+          <div class="stat-card" style="padding: 20px;">
+            <div style="font-size: 20px; margin-bottom: 12px;">💳</div>
+            <div class="stat-label" style="margin-bottom: 4px;">Total Spent</div>
+            <div class="stat-value debit" id="budget-page-spent" style="font-size: 24px;">₹0</div>
+          </div>
+          <div class="stat-card" style="padding: 20px;">
+            <div style="font-size: 20px; margin-bottom: 12px;">💚</div>
+            <div class="stat-label" style="margin-bottom: 4px;">Remaining</div>
+            <div class="stat-value credit" id="budget-page-remaining" style="font-size: 24px;">₹0</div>
+          </div>
+        </div>
+
+        <!-- Category Budgets List -->
+        <div class="card">
+          <div class="card-header" style="align-items: center;">
+            <div>
+              <div class="card-title">Category Budgets</div>
+              <div class="card-subtitle">Monthly limits & spending</div>
+            </div>
+            <button class="btn btn-primary" onclick="window.openModal('set-budget-modal')">+ Set Budget</button>
+          </div>
+          <div class="card-body">
+            <div class="category-budget-list" id="category-budget-list">
+              <!-- JS will populate this -->
+              <p style="color: var(--text2); text-align: center; padding: 20px;">No category budgets set. Click "+ Set Budget" to add one.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACCOUNTS PAGE -->
+      <div class="page" id="page-accounts">
+        
+        <div class="grid-2">
+          <!-- Account Summary Card -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Account Summary</div>
+              <button class="btn btn-primary" onclick="window.openModal('add-account-modal')">+ Add Account</button>
+            </div>
+            <div class="card-body">
+              <!-- This ID must match what is in your renderAccountsUI() function -->
+              <div class="account-list" id="page-accounts-list"></div>
+            </div>
+          </div>
+
+          <!-- Balance Trend Card -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Balance Trend</div>
+              <div class="card-subtitle">Last 7 Days</div>
+            </div>
+            <div class="card-body">
+              <!-- ADD THIS CHART WRAPPER -->
+              <div class="chart-wrap" style="height: 250px; position: relative; width: 100%;">
+                <canvas id="balanceChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Transfer Card -->
+        <div class="card" style="margin-top: 24px;">
+          <div class="card-header">
+            <div class="card-title">Quick Transfer</div>
+          </div>
+          <div class="card-body">
+            <div class="transfer-grid">
+              
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">FROM ACCOUNT</label>
+                <select class="form-select" id="transfer-from">
+                  <option value="savings">SBI Campus Account</option>
+                  <option value="current">HDFC Student</option>
+                  <option value="wallet">Paytm Wallet</option>
+                </select>
+              </div>
+
+              <div class="transfer-icon">⇄</div>
+
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">TO ACCOUNT</label>
+                <select class="form-select" id="transfer-to">
+                  <option value="wallet">Paytm Wallet</option>
+                  <option value="current">HDFC Student</option>
+                  <option value="savings">SBI Campus Account</option>
+                </select>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">AMOUNT (₹)</label>
+                <input type="number" class="form-input" id="transfer-amount" placeholder="0.00">
+              </div>
+
+            </div>
+            <button class="btn btn-primary btn-block" onclick="window.processTransfer()" style="margin-top: 24px;">Transfer</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ANALYTICS PAGE -->
+      <div class="page" id="page-analytics" style="margin:20px;">
+        
+        <!-- Top KPI Cards -->
+        <div class="grid-3">
+          
+          <!-- Avg Daily Spend -->
+          <div class="card kpi-card" style="border-top: 3px solid var(--accent);">
+            <div class="card-body">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                <div class="stat-label">Avg Daily Spend</div>
+                <div class="kpi-icon" style="background: rgba(0, 229, 160, 0.1); color: var(--accent);">📅</div>
+              </div>
+              <div class="stat-value" id="kpi-daily-spend">₹0</div>
+              <div class="kpi-subtext" id="kpi-daily-sub">Calculated for this month</div>
+            </div>
+          </div>
+
+          <!-- Savings Rate -->
+          <div class="card kpi-card" style="border-top: 3px solid #8b5cf6;">
+            <div class="card-body">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                <div class="stat-label">Savings Rate</div>
+                <div class="kpi-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">💎</div>
+              </div>
+              <div class="stat-value" id="kpi-savings-rate">0%</div>
+              <div class="kpi-subtext" id="kpi-savings-sub">Income vs Expenses</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Middle Section: Bar Chart & Heatmap -->
+        <div class="grid-2">
+          <!-- Monthly Comparison -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Monthly Comparison</div>
+              <div class="card-subtitle">Income vs Expense</div>
+            </div>
+            <div class="card-body">
+              <div class="chart-wrap" style="height: 250px; position: relative; width: 100%;">
+                <canvas id="monthlyComparisonChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Spending Heatmap -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Spending Heatmap</div>
+              <div class="card-subtitle">By day of week & category</div>
+            </div>
+            <div class="card-body" style="display: flex; flex-direction: column; justify-content: center;">
+              <div id="analytics-heatmap" class="heatmap-container">
+                <!-- Populated by JS -->
+              </div>
+              <div class="heatmap-legend">
+                <span>Less</span>
+                <div class="heatmap-cell legend" style="background: var(--surface2)"></div>
+                <div class="heatmap-cell legend" style="background: rgba(255, 107, 107, 0.3)"></div>
+                <div class="heatmap-cell legend" style="background: rgba(255, 107, 107, 0.6)"></div>
+                <div class="heatmap-cell legend" style="background: var(--red)"></div>
+                <span>More</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Section: 12 Month Trend -->
+        <div class="card" style="margin-top: 24px;">
+          <div class="card-header">
+            <div class="card-title">Spending Trend — Last 12 Months</div>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrap" style="height: 300px; position: relative; width: 100%;">
+              <canvas id="twelveMonthTrendChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- PROFILE PAGE -->
+      <div class="page" id="page-profile" style="padding: 24px;"> <!-- Fixed the spacing issue here -->
+        <div class="grid-3" style="grid-template-columns: 1fr 2fr; gap: 24px;">
+          
+          <!-- LEFT: IDENTITY CARD -->
+          <div class="card">
+            <div class="card-body" style="text-align: center; padding: 40px 24px;">
+              <div class="profile-avatar-lg" id="profile-avatar-lg">M</div>
+              <h2 id="profile-full-name">Meet Raval</h2>
+              <p class="card-subtitle" id="profile-college-tag">DYPIT, Pimpri • 3rd Year</p>
+              
+              <!-- Financial Discipline Score -->
+              <div class="discipline-meter">
+                <div class="meter-label">Financial Discipline: <span id="discipline-score">85%</span></div>
+                <div class="meter-bar"><div class="meter-fill" style="width: 85%"></div></div>
+                <p style="font-size: 11px; color: var(--text3); margin-top: 8px;">Rank: Financial Stoic</p>
+              </div>
+
+              <button class="btn btn-ghost" onclick="window.logout()" style="width: 100%; margin-top: 24px; color: var(--red); border-color: rgba(255,107,107,0.2);">
+                🚪 Logout Session
+              </button>
+            </div>
+          </div>
+
+          <!-- RIGHT: SETTINGS & TARGETS -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Settings & Parameters</div>
+            </div>
+            <div class="card-body">
+              
+              <div class="form-row">
+                <div class="form-group half">
+                  <label class="form-label">Active Name</label>
+                  <input type="text" class="form-input" id="set-name" value="Meet Raval">
+                </div>
+                <div class="form-group half">
+                  <label class="form-label">Monthly Target (₹)</label>
+                  <input type="number" class="form-input" id="set-budget" value="15000">
+                </div>
+              </div>
+
+              <!-- ADDED YEAR DROPDOWN BACK HERE -->
+              <div class="form-row">
+                <div class="form-group half">
+                  <label class="form-label">Institution</label>
+                  <input type="text" class="form-input" id="set-college" value="Dr. D. Y. Patil Institute of Technology">
+                </div>
+                <div class="form-group half">
+                  <label class="form-label">Academic Year</label>
+                  <select class="form-select" id="set-year">
+                    <option value="1st Year">1st Year</option>
+                    <option value="2nd Year">2nd Year</option>
+                    <option value="3rd Year">3rd Year</option>
+                    <option value="4th Year">4th Year</option>
+                  </select>
+                </div>
+              </div>
+
+              <button class="btn btn-primary btn-block" onclick="window.updateProfile()" style="margin-top: 16px;">Sync Changes</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER (For the Welcome message in Image 3) -->
+<div class="toast-container" id="toasts"></div>
+
+<!-- ADD TRANSACTION MODAL (Enhanced) -->
+<div class="modal-overlay" id="add-txn-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add Transaction</div>
+      <button class="modal-close" onclick="window.closeModal('add-txn-modal')">✕</button>
+    </div>
+    
+    <!-- Custom Type Toggle -->
+    <div class="type-toggle">
+      <button class="type-btn active expense" id="btn-expense" onclick="window.setTxnType('expense')">💸 Expense</button>
+      <button class="type-btn income" id="btn-income" onclick="window.setTxnType('income')">💰 Income</button>
+    </div>
+    <input type="hidden" id="txn-type" value="expense">
+
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <input type="text" class="form-input" id="txn-desc" placeholder="What was this for?">
+    </div>
+
+    <div class="form-row">
+      <div class="form-group half">
+        <label class="form-label">Amount (₹)</label>
+        <input type="number" class="form-input" id="txn-amount" placeholder="0.00">
+      </div>
+      <div class="form-group half">
+        <label class="form-label">Date</label>
+        <input type="date" class="form-input" id="txn-date">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group half">
+        <label class="form-label">Category</label>
+        <select class="form-select" id="txn-category">
+          <option value="food">🍽️ Mess & Food</option>
+          <option value="study">📚 Study</option>
+          <option value="hostel">🏠 Hostel</option>
+          <option value="travel">🚌 Travel</option>
+          <option value="shopping">🛍️ Shopping</option>
+          <option value="other">📦 Other</option>
+        </select>
+      </div>
+      <div class="form-group half">
+        <label class="form-label">Account</label>
+        <select class="form-select" id="txn-account">
+          <option value="savings">🏦 SBI Campus Account</option>
+          <option value="current">💼 HDFC Student</option>
+          <option value="wallet">📱 Paytm Wallet</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Note (Optional)</label>
+      <input type="text" class="form-input" id="txn-note" placeholder="Add a note...">
+    </div>
+
+    <button class="btn btn-primary btn-block" onclick="window.saveTransaction()">Add Transaction</button>
+  </div>
+</div>
+
+<!-- SET BUDGET MODAL -->
+<div class="modal-overlay" id="set-budget-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Set Budget</div>
+      <button class="modal-close" onclick="window.closeModal('set-budget-modal')">✕</button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Category</label>
+      <select class="form-select" id="budget-category">
+        <option value="food">🍽️ Mess & Food</option>
+        <option value="study">📚 Study</option>
+        <option value="hostel">🏠 Hostel</option>
+        <option value="travel">🚌 Travel</option>
+        <option value="shopping">🛍️ Shopping</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Monthly Budget (₹)</label>
+      <input type="number" class="form-input" id="budget-amount" placeholder="e.g. 3000">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Alert Threshold</label>
+      <select class="form-select" id="budget-threshold">
+        <option value="50">50%</option>
+        <option value="80" selected>80% (Default)</option>
+        <option value="90">90%</option>
+        <option value="100">100%</option>
+      </select>
+    </div>
+
+    <button class="btn btn-primary btn-block" onclick="window.saveCategoryBudget()">Save Budget</button>
+  </div>
+</div>
+
+
+<!-- ADD ACCOUNT MODAL -->
+<div class="modal-overlay" id="add-account-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add Account</div>
+      <button class="modal-close" onclick="window.closeModal('add-account-modal')">✕</button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">ACCOUNT NAME</label>
+      <input type="text" class="form-input" id="acc-name" placeholder="e.g. Axis Bank">
+    </div>
+
+    <div class="form-row">
+      <div class="form-group half">
+        <label class="form-label">ACCOUNT TYPE</label>
+        <select class="form-select" id="acc-type">
+          <option value="savings">🏦 Savings Account</option>
+          <option value="current">💼 Current Account</option>
+          <option value="wallet">📱 Digital Wallet</option>
+        </select>
+      </div>
+      <div class="form-group half">
+        <label class="form-label">OPENING BALANCE (₹)</label>
+        <input type="number" class="form-input" id="acc-balance" placeholder="0">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">BANK NAME (OPTIONAL)</label>
+      <input type="text" class="form-input" id="acc-bank" placeholder="e.g. SBI, HDFC, ICICI">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">ACCOUNT NUMBER (OPTIONAL)</label>
+      <input type="text" class="form-input" id="acc-number" placeholder="Last 4 digits only">
+    </div>
+
+    <button class="btn btn-primary btn-block" onclick="window.saveAccount()">Add Account</button>
+  </div>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
