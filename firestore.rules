@@ -6,10 +6,55 @@ service cloud.firestore {
       allow read, write, delete: if request.auth != null && request.auth.uid == userId;
     }
     
-    // User profile documents
+    // User profile documents with validation
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && 
+                      request.auth.uid == userId &&
+                      request.resource.data.keys().hasAll(['name', 'email']) &&
+                      request.resource.data.name is string &&
+                      request.resource.data.name.size() > 0 &&
+                      request.resource.data.email is string &&
+                      request.resource.data.email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+    }
+    
+    // Transactions collection with validation
+    match /users/{userId}/transactions/{transactionId} {
+      allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && 
+                      request.auth.uid == userId &&
+                      request.resource.data.keys().hasAll(['amount', 'type', 'category', 'date']) &&
+                      request.resource.data.amount is number &&
+                      request.resource.data.amount > 0 &&
+                      request.resource.data.type in ['income', 'expense'] &&
+                      request.resource.data.category in ['food', 'study', 'hostel', 'travel', 'shopping', 'other'] &&
+                      request.resource.data.date is timestamp;
+    }
+    
+    // Accounts collection with validation
+    match /users/{userId}/accounts/{accountId} {
+      allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && 
+                      request.auth.uid == userId &&
+                      request.resource.data.keys().hasAll(['name', 'type', 'balance']) &&
+                      request.resource.data.name is string &&
+                      request.resource.data.name.size() > 0 &&
+                      request.resource.data.type in ['savings', 'current', 'wallet'] &&
+                      request.resource.data.balance is number &&
+                      request.resource.data.balance >= 0;
+    }
+    
+    // Budgets collection with validation
+    match /users/{userId}/budgets/{budgetId} {
+      allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && 
+                      request.auth.uid == userId &&
+                      request.resource.data.keys().hasAll(['limit', 'threshold']) &&
+                      request.resource.data.limit is number &&
+                      request.resource.data.limit > 0 &&
+                      request.resource.data.threshold is number &&
+                      request.resource.data.threshold >= 0 &&
+                      request.resource.data.threshold <= 100;
     }
     
     // Deny all other access

@@ -1,0 +1,32 @@
+{
+  "name": "smart-expense-tracker",
+  "version": "1.0.0",
+  "description": "A comprehensive expense tracking application with Firebase integration",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:share": "vite --host 0.0.0.0 --port 3000",
+    "build": "vite build",
+    "build:vercel": "vite build",
+    "preview": "vite preview",
+    "preview:share": "vite preview --host 0.0.0.0 --port 3000",
+    "deploy": "npm run build && firebase deploy",
+    "deploy:vercel": "npm run build:vercel && vercel --prod",
+    "deploy:vercel:dev": "npm run build:vercel && vercel",
+    "deploy:only": "firebase deploy --only hosting",
+    "serve": "vite preview --port 3000",
+    "serve:share": "vite preview --host 0.0.0.0 --port 3000",
+    "start": "npm run dev:share"
+  },
+  "dependencies": {
+    "firebase": "^10.7.0"
+  },
+  "devDependencies": {
+    "terser": "^5.46.2",
+    "vite": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

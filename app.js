@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-config.js';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-import { collection, doc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
+import { collection, doc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy } from "firebase/firestore";
 
 let currentUser = null;
 let isSignup = false;
@@ -44,70 +44,102 @@ function showToast(message, type = 'success') {
 // ==============================
 // AUTHENTICATION LOGIC
 // ==============================
-window.toggleAuth = () => {
-    isSignup = !isSignup;
-    document.getElementById('auth-title').innerText = isSignup ? 'Sign Up' : 'Login';
-    document.getElementById('auth-btn').innerText = isSignup ? 'Create Account' : 'Login';
-    document.getElementById('auth-toggle-text').innerText = isSignup ? 'Already have an account? ' : "Don't have an account? ";
-    document.getElementById('auth-toggle-btn').innerText = isSignup ? 'Login' : 'Sign Up';
-    document.getElementById('signup-fields').style.display = isSignup ? 'block' : 'none';
-};
 
-window.handleAuth = async () => {
-    const email = document.getElementById('auth-email').value;
-    const password = document.getElementById('auth-password').value;
-    const errorEl = document.getElementById('auth-error');
-    const btn = document.getElementById('auth-btn');
-    
-    const name = document.getElementById('auth-name').value;
-    const college = document.getElementById('auth-college').value;
-    const year = document.getElementById('auth-year').value;
-    const budget = document.getElementById('auth-budget').value;
-    
-    if(!email || !password) {
-        errorEl.innerText = "Please fill the email and password.";
-        errorEl.style.display = 'block';
-        return;
-    }
-    
-    if(isSignup && (!name || !college || !year || !budget)) {
-        errorEl.innerText = "Please fill out all profile details.";
-        errorEl.style.display = 'block';
-        return;
-    }
+// 1. Handle Login Form Submit
+const loginForm = document.getElementById('login-form');
+if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault(); 
+        
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        const errorDiv = loginForm.querySelector('.auth-error-msg');
+        const btn = loginForm.querySelector('.auth-btn-main');
+        const originalText = btn.innerHTML;
+        
+        if(errorDiv) errorDiv.style.display = 'none'; 
+        btn.innerText = "Authenticating...";
 
-    btn.innerText = "Loading...";
-    
-    document.getElementById('auth-btn').innerText = "Loading...";
-    try {
-        if (isSignup) {
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            btn.innerHTML = originalText;
+        } catch (error) {
+            if(errorDiv) {
+                errorDiv.innerText = error.message.replace('Firebase: ', '');
+                errorDiv.style.display = 'block';
+            }
+            btn.innerHTML = originalText;
+        }
+    });
+}
+
+// 2. Handle Sign-Up Form Submit
+const signupForm = document.getElementById('signup-form');
+if (signupForm) {
+    signupForm.addEventListener('submit', async (e) => {
+        e.preventDefault(); 
+        
+        const name = document.getElementById('signup-name').value;
+        const email = document.getElementById('signup-email').value;
+        const college = document.getElementById('signup-college').value;
+        const year = document.getElementById('signup-year').value;
+        const budget = document.getElementById('signup-budget').value;
+        const password = document.getElementById('signup-password').value;
+        
+        const confirmPassword = document.getElementById('signup-password-confirm').value;
+        
+        const errorDiv = signupForm.querySelector('.auth-error-msg');
+        const btn = signupForm.querySelector('.auth-btn-main');
+        const originalText = btn.innerHTML;
+        
+        if(errorDiv) errorDiv.style.display = 'none';
+
+        // NEW: Check if passwords match!
+        if (password !== confirmPassword) {
+            if(errorDiv) {
+                errorDiv.innerText = "Security Halt: Passwords do not match.";
+                errorDiv.style.display = 'block';
+            }
+            return; // Stop the function here so it doesn't create the account
+        }
+
+        btn.innerText = "Initializing...";
+
+        try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
-            
+
+            // Save profile data
             await setDoc(doc(db, "users", user.uid), {
-                profile: { 
-                    name: document.getElementById('auth-name').value, 
-                    college: document.getElementById('auth-college').value, 
-                    year: document.getElementById('auth-year').value, 
-                    budget: Number(document.getElementById('auth-budget').value) 
+                profile: {
+                    name: name,
+                    email: email,
+                    college: college,
+                    year: year,
+                    budget: Number(budget)
                 }
             });
 
-            await seedInitialData(user.uid); 
+            // Trigger the seed data
+            if (typeof seedInitialData === 'function') {
+                await seedInitialData(user.uid);
+            }
             
-            showToast('Account created and data seeded successfully!', 'success');
-        } else {
-            await signInWithEmailAndPassword(auth, email, password);
+            btn.innerHTML = originalText;
+        } catch (error) {
+            if(errorDiv) {
+                errorDiv.innerText = error.message.replace('Firebase: ', '');
+                errorDiv.style.display = 'block';
+            }
+            btn.innerHTML = originalText;
         }
-    } catch (error) {
-        errorEl.style.display = 'block';
-        errorEl.innerText = error.message;
-        document.getElementById('auth-btn').innerText = isSignup ? 'Create Account' : 'Login';
-    }
-};
+    });
+}
 
+// Global Logout
 window.logout = () => signOut(auth);
 
+// 3. Master Auth State Listener
 onAuthStateChanged(auth, (user) => {
     currentUser = user;
     
@@ -115,18 +147,28 @@ onAuthStateChanged(auth, (user) => {
     const loader = document.getElementById('global-loader');
     if (loader) {
         loader.style.opacity = '0';
-        setTimeout(() => loader.style.display = 'none', 400); // Wait for fade out
+        setTimeout(() => loader.style.display = 'none', 400); 
     }
 
     if (user) {
-        document.getElementById('auth-overlay').style.display = 'none';
+        // Logged IN: Hide auth pages, show the main App
+        document.getElementById('page-auth').classList.remove('active');
+        document.getElementById('page-signup').classList.remove('active');
         document.getElementById('app').style.display = 'flex';
-        loadData();
-    } else {
-        document.getElementById('auth-overlay').style.display = 'flex';
-        document.getElementById('app').style.display = 'none';
         
-        // Clear listeners
+        // Ensure we land on the Dashboard
+        if (typeof window.navigate === 'function') {
+            window.navigate('dashboard', document.querySelectorAll('.nav-item')[0]);
+        }
+        
+        loadData(); // Load user's Firebase data
+    } else {
+        // Logged OUT: Hide App, Show Login Page
+        document.getElementById('app').style.display = 'none';
+        document.getElementById('page-signup').classList.remove('active');
+        document.getElementById('page-auth').classList.add('active'); 
+        
+        // Clear listeners so data doesn't leak
         if (unsubTxns) unsubTxns();
         if (unsubProfile) unsubProfile();
         if (unsubAccounts) unsubAccounts();
@@ -177,9 +219,9 @@ async function seedInitialData(uid) {
             });
         }
         
-        console.log("Seed data added successfully");
+        // Seed data added successfully
     } catch (e) {
-        console.error("Error seeding data: ", e);
+        // Error seeding data:
     }
 }
 
@@ -231,6 +273,14 @@ window.navigate = (page, el) => {
                 window.renderAnalyticsPage();
             }
         }, 50);
+    }
+    
+    if(page === 'budget') {
+        document.getElementById('page-subtitle').innerText = 'Manage your budget limits';
+        // Trigger budget page rendering when navigating to it
+        if (allTransactionsGlobal.length > 0 && typeof renderBudgetPage === 'function') {
+            renderBudgetPage(allTransactionsGlobal);
+        }
     }
     
     if(page === 'profile') {
@@ -287,7 +337,7 @@ window.processTransfer = async () => {
         showToast(`Transferred ₹${amount.toLocaleString('en-IN')} successfully!`);
         document.getElementById('transfer-amount').value = '';
     } catch(e) {
-        console.error("Transfer Error: ", e);
+        // Error processing transfer
         showToast('Error processing transfer', 'error');
     } finally {
         btn.innerText = originalText;
@@ -419,7 +469,7 @@ window.saveTransaction = async () => {
         
         showToast('Transaction added and balance updated!');
     } catch (e) {
-        console.error("Error saving transaction: ", e);
+        // Error saving transaction
         showToast('Error saving transaction', 'error');
     } finally {
         btn.innerText = originalText;
@@ -438,7 +488,7 @@ window.deleteTransaction = async (id) => {
         await deleteDoc(doc(db, "users", currentUser.uid, "transactions", id));
         showToast('Transaction deleted successfully!');
     } catch (e) {
-        console.error("Error deleting transaction: ", e);
+        // Error deleting transaction
         showToast('Error deleting transaction', 'error');
     }
 };
@@ -452,28 +502,29 @@ function loadData() {
     if (!currentUser) return;
     
     // 1. Profile Listener
+    // --- 1. PROFILE & TOTAL BUDGET LISTENER ---
     unsubProfile = onSnapshot(doc(db, "users", currentUser.uid), (docSnap) => {
         if (docSnap.exists()) {
-            const data = docSnap.data().profile;
-            globalBudget = data.budget || 15000;
+            const data = docSnap.data();
             
-            // 1. Update Sidebar Card
-            document.getElementById('nav-name').innerText = data.name;
-            document.getElementById('nav-meta').innerText = `${data.college.split(',')[0]} • ${data.year}`;
-            document.getElementById('nav-avatar').innerText = data.name.charAt(0);
+            // Safely grab the data whether it is inside the new 'profile' object or the old structure
+            const userData = data.profile ? data.profile : data;
 
-            // 2. Update Profile Page Cards
-            document.getElementById('profile-full-name').innerText = data.name;
-            document.getElementById('profile-college-tag').innerText = `${data.college} • ${data.year}`;
-            document.getElementById('profile-avatar-lg').innerText = data.name.charAt(0);
+            // Update the global total budget
+            globalBudget = Number(userData.budget) || 0;
+
+            // Update the Sidebar Profile Card
+            const navName = document.getElementById('nav-name');
+            const navMeta = document.getElementById('nav-meta');
+            const navAvatar = document.getElementById('nav-avatar');
             
-            // 3. Pre-fill the Input Forms
-            document.getElementById('set-name').value = data.name;
-            document.getElementById('set-budget').value = data.budget;
-            document.getElementById('set-college').value = data.college;
-            document.getElementById('set-year').value = data.year || '3rd Year';
-            
-            if(!hasWelcomed) { showToast(`Welcome back, ${data.name}!`); hasWelcomed = true; }
+            if (navName) navName.innerText = userData.name || 'User';
+            if (navMeta) navMeta.innerText = `${userData.college || 'Welcome'} • ${userData.year ? userData.year + ' Year' : ''}`;
+            if (navAvatar && userData.name) navAvatar.innerText = userData.name.charAt(0).toUpperCase();
+
+            // Re-render the UI elements that depend on the Total Budget
+            if (typeof window.renderBudgetsUI === 'function') window.renderBudgetsUI();
+            if (typeof window.renderDashboard === 'function') window.renderDashboard();
         }
     });
 
@@ -537,6 +588,11 @@ function loadData() {
             if (typeof window.renderOverviewChart === 'function') window.renderOverviewChart(allTransactionsGlobal);
             if (typeof window.renderCategoryChart === 'function') window.renderCategoryChart(allTransactionsGlobal);
             if (typeof window.renderDashboardBudgets === 'function') window.renderDashboardBudgets(allTransactionsGlobal);
+        }
+        
+        // 4. Update Budget page if active
+        if (document.getElementById('page-budget').classList.contains('active')) {
+            if (typeof renderBudgetPage === 'function') renderBudgetPage(allTransactionsGlobal);
         }
     });
 }
@@ -700,7 +756,7 @@ window.deleteTransaction = async (id) => {
         await deleteDoc(doc(db, "users", currentUser.uid, "transactions", id));
         showToast('Transaction deleted');
     } catch (e) {
-        console.error("Error deleting: ", e);
+        // Error deleting
         showToast('Error deleting', 'error');
     }
 };
@@ -783,7 +839,7 @@ window.saveCategoryBudget = async () => {
         showToast('Budget saved successfully!');
         window.closeModal('set-budget-modal');
     } catch (e) {
-        console.error("Error saving budget: ", e);
+        // Error saving budget
         showToast('Error saving budget', 'error');
     }
 };
@@ -819,10 +875,11 @@ function renderBudgetPage(transactions) {
 
     // 3. Render Items & Check Alerts
     let totalCustomBudget = 0;
+    let budgetedSpent = 0; // NEW: Track spending ONLY for budgeted categories
     let html = '';
     let alertData = null;
 
-    const icons = { food: '🍽️', study: '📚', hostel: '🏠', travel: '🚌', shopping: '🛍️', other: '📦' };
+    const icons = { food: '', study: '', hostel: '', travel: '', shopping: '', other: '' };
     const titles = { food: 'Mess & Food', study: 'Study Material', hostel: 'Hostel', travel: 'Transport', shopping: 'Shopping', other: 'Other' };
 
     categories.forEach(cat => {
@@ -831,24 +888,26 @@ function renderBudgetPage(transactions) {
         const spent = spentData[cat] || 0;
         
         totalCustomBudget += limit;
+        budgetedSpent += spent; // NEW: Add to our budgeted spending total
         
-        let pct = Math.round((spent / limit) * 100);
-        if (pct > 100) pct = 100; // Cap at 100 for UI
+        // Prevent dividing by zero if someone accidentally sets a limit of 0
+        let pct = limit > 0 ? Math.round((spent / limit) * 100) : 100; 
+        if (pct > 100) pct = 100;
 
         // Color logic
         let color = 'var(--accent)'; // Green
         let statusText = 'On track';
-        if (pct >= threshold) {
+        if (pct >= threshold && pct < 100) {
             color = 'var(--orange)';
             statusText = 'Nearing limit';
-            alertData = { name: titles[cat], pct }; // Set alert if threshold crossed
+            alertData = { name: titles[cat], pct }; 
         }
         if (pct >= 100) {
             color = 'var(--red)';
             statusText = 'Over budget!';
         }
 
-        // Generate Item HTML
+        // Generate Item HTML (Keep your exact HTML string here!)
         html += `
         <div class="cat-budget-item">
             <div class="progress-circle" style="background: conic-gradient(${color} ${pct}%, var(--surface2) 0);">
@@ -857,7 +916,7 @@ function renderBudgetPage(transactions) {
             
             <div style="flex: 1;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                    <div style="font-weight: 600; font-size: 15px;">${icons[cat] || '📦'} ${titles[cat] || cat}</div>
+                    <div style="font-weight: 600; font-size: 15px;">${icons[cat] || ''} ${titles[cat] || cat}</div>
                     <div style="font-size: 13px; color: var(--text2);">
                         ₹${spent.toLocaleString('en-IN')} / <span style="color: var(--text); font-weight: 700;">₹${limit.toLocaleString('en-IN')}</span>
                     </div>
@@ -880,10 +939,10 @@ function renderBudgetPage(transactions) {
 
     listEl.innerHTML = html;
 
-    // 4. Update Summary Cards
+    // 4. Update Summary Cards (Using the correct budgetedSpent variable)
     document.getElementById('budget-page-total').innerText = `₹${totalCustomBudget.toLocaleString('en-IN')}`;
-    document.getElementById('budget-page-spent').innerText = `₹${totalSpent.toLocaleString('en-IN')}`;
-    document.getElementById('budget-page-remaining').innerText = `₹${(totalCustomBudget - totalSpent).toLocaleString('en-IN')}`;
+    document.getElementById('budget-page-spent').innerText = `₹${budgetedSpent.toLocaleString('en-IN')}`;
+    document.getElementById('budget-page-remaining').innerText = `₹${Math.max(0, totalCustomBudget - budgetedSpent).toLocaleString('en-IN')}`;
 
     // 5. Handle Alert Banner
     const alertBanner = document.getElementById('budget-alert-banner');
@@ -897,16 +956,25 @@ function renderBudgetPage(transactions) {
 }
 
 
-// --- DELETE BUDGET ---
+// ==============================
+// DELETE BUDGET LOGIC
+// ==============================
 window.deleteBudget = async (categoryId, categoryName) => {
-    if(confirm(`Are you sure you want to remove the budget limit for ${categoryName}?`)) {
-        try {
-            await deleteDoc(doc(db, "users", currentUser.uid, "budgets", categoryId));
-            showToast('Budget removed successfully!');
-        } catch (e) {
-            console.error("Error deleting budget: ", e);
-            showToast('Error deleting budget', 'error');
-        }
+    // Add a confirmation so users don't accidentally delete their budgets
+    if (!confirm(`Are you sure you want to remove the budget limit for ${categoryName}?`)) {
+        return;
+    }
+
+    try {
+        // Delete the document from Firebase
+        await deleteDoc(doc(db, "users", currentUser.uid, "budgets", categoryId));
+        showToast(`${categoryName} budget removed`);
+        
+        // No need to manually re-render, your Firebase onSnapshot listener 
+        // will detect the deletion and refresh the page automatically!
+    } catch (e) {
+        // Error removing budget
+        showToast('Error removing budget', 'error');
     }
 };
 
@@ -961,12 +1029,17 @@ function renderAccountsUI() {
             </div>`;
 
         // 2. Build Accounts Page List Item (Includes the Trash Icon)
+        const bankInfo = acc.bankName ? `<div style="font-size: 11px; color: var(--text3);">${acc.bankName}</div>` : '';
+        const accountInfo = acc.accountNumber ? `<div style="font-size: 11px; color: var(--text3);">****${acc.accountNumber}</div>` : '';
+        
         listHtml += `
             <div class="acc-list-item">
                 <div class="acc-list-icon" style="background: ${ui.color}; color: ${ui.text};">${ui.icon}</div>
                 <div class="acc-list-info">
                     <div class="acc-list-name">${acc.name}</div>
                     <div class="acc-list-type">${acc.type.toUpperCase()}</div>
+                    ${bankInfo}
+                    ${accountInfo}
                 </div>
                 <div class="acc-list-right" style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
                     <div class="acc-list-bal">₹${acc.balance.toLocaleString('en-IN')}</div>
@@ -1060,25 +1133,56 @@ window.renderBalanceChart = () => {
     });
 };
 
-// Function to save the account from the modal
-window.saveAccount = () => {
-    const name = document.getElementById('acc-name').value;
-    const balance = document.getElementById('acc-balance').value;
-    
-    if (!name || !balance) {
-        return showToast('Please enter an account name and balance', 'error');
-    }
+// ==============================
+// ADD NEW ACCOUNT LOGIC
+// ==============================
+window.submitNewAccount = async () => {
+    if (!currentUser) return;
 
-    // Later this will push to Firebase, but for now we mock success
-    showToast(`${name} added successfully!`);
-    
-    // Clear inputs and close
-    document.getElementById('acc-name').value = '';
-    document.getElementById('acc-balance').value = '';
-    document.getElementById('acc-bank').value = '';
-    document.getElementById('acc-number').value = '';
-    
-    window.closeModal('add-account-modal');
+    const btn = document.getElementById('btn-save-account');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "Saving...";
+
+    // 1. Grab values from the modal
+    const nameInput = document.getElementById('new-acc-name');
+    const typeInput = document.getElementById('new-acc-type');
+    const balanceInput = document.getElementById('new-acc-balance');
+    const bankInput = document.getElementById('new-acc-bank');
+    const numberInput = document.getElementById('new-acc-number');
+
+    // 2. Prepare the data object
+    const newAccountData = {
+        name: nameInput.value,
+        type: typeInput.value,
+        balance: Number(balanceInput.value),
+        bankName: bankInput.value || '',
+        accountNumber: numberInput.value || '',
+        createdAt: new Date().toISOString()
+    };
+
+    try {
+        // 3. Save to Firebase Firestore
+        await addDoc(collection(db, "users", currentUser.uid, "accounts"), newAccountData);
+        
+        // 4. Clean up and close modal
+        nameInput.value = '';
+        balanceInput.value = '';
+        bankInput.value = '';
+        numberInput.value = '';
+        typeInput.value = 'savings';
+        window.closeModal('add-account-modal');
+        
+        showToast('Account added successfully!');
+        
+        // Note: You don't need to manually re-render the UI here! 
+        // Your onSnapshot listener (unsubAccounts) will automatically detect the new data and redraw your accounts grid!
+        
+    } catch (error) {
+        // Error adding account
+        showToast('Failed to add account', 'error');
+    } finally {
+        btn.innerHTML = originalText;
+    }
 };
 
 // --- DELETE ACCOUNT ---
@@ -1088,7 +1192,7 @@ window.deleteAccount = async (id, name) => {
             await deleteDoc(doc(db, "users", currentUser.uid, "accounts", id));
             showToast('Account deleted successfully!');
         } catch (e) {
-            console.error("Error deleting account: ", e);
+            // Error deleting account
             showToast('Error deleting account', 'error');
         }
     }
@@ -1123,15 +1227,15 @@ window.renderAnalyticsPage = () => {
 
     const currentDay = now.getDate();
     const avgSpend = currentDay > 0 ? (currentMonthExpense / currentDay) : 0;
-    document.getElementById('analytics-avg-spend').innerText = `₹${Math.round(avgSpend).toLocaleString('en-IN')}`;
+    document.getElementById('kpi-daily-spend').innerText = `₹${Math.round(avgSpend).toLocaleString('en-IN')}`;
 
     let savingsRate = 0;
     if (currentMonthIncome > 0) savingsRate = Math.max(0, Math.round(((currentMonthIncome - currentMonthExpense) / currentMonthIncome) * 100));
-    document.getElementById('analytics-savings-rate').innerText = `${savingsRate}%`;
+    document.getElementById('kpi-savings-rate').innerText = `${savingsRate}%`;
 
 
     // --- 2. MONTHLY COMPARISON CHART ---
-    const monthlyCtx = document.getElementById('analyticsMonthlyChart');
+    const monthlyCtx = document.getElementById('monthlyComparisonChart');
     if (monthlyCtx) {
         const labels6 = [];
         const incData = [0, 0, 0, 0, 0, 0];
@@ -1167,7 +1271,7 @@ window.renderAnalyticsPage = () => {
     }
 
     // --- 3. SPENDING TREND CHART ---
-    const trendCtx = document.getElementById('analyticsTrendChart');
+    const trendCtx = document.getElementById('twelveMonthTrendChart');
     if (trendCtx) {
         const labels12 = [];
         const trendData = [0,0,0,0,0,0,0,0,0,0,0,0];
@@ -1187,6 +1291,7 @@ window.renderAnalyticsPage = () => {
         });
 
         if (analyticsTrendInst) analyticsTrendInst.destroy();
+        if(typeof Chart !== 'undefined') Chart.defaults.color = '#8b9cc8';
 
         analyticsTrendInst = new Chart(trendCtx, {
             type: 'line',
@@ -1198,7 +1303,7 @@ window.renderAnalyticsPage = () => {
     }
 
     // --- 4. SPENDING HEATMAP ---
-    const heatmapContainer = document.getElementById('analyticsHeatmap');
+    const heatmapContainer = document.getElementById('analytics-heatmap');
     if (heatmapContainer) {
         const categories = ['food', 'study', 'travel', 'shopping', 'other'];
         const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -1302,7 +1407,7 @@ window.updateProfile = async () => {
         });
         showToast('Profile synced successfully!');
     } catch (e) {
-        console.error("Error updating profile:", e);
+        // Error updating profile
         showToast('Error syncing profile', 'error');
     } finally {
         btn.innerText = originalText;
@@ -1606,16 +1711,15 @@ window.renderDashboardBudgets = (transactions) => {
     container.innerHTML = html;
 };
 
-window.renderBudgetPage = (transactions) => {
-    // Make sure you have a container with this ID on your Budget HTML page!
-    const container = document.getElementById('budget-limits-list') || document.getElementById('page-budget-list'); 
+window.renderDashboardBudgets = (transactions) => {
+    const container = document.getElementById('dashboard-budget-status');
     if (!container) return;
 
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
-    // 1. Calculate how much is spent per category THIS month
+    // 1. Calculate spent amounts
     const spentData = {};
     transactions.forEach(t => {
         const d = new Date(t.date);

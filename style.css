@@ -609,10 +609,11 @@ body.light-mode .txn-item:hover {
 .modal-overlay.open { opacity: 1; pointer-events: all; }
 .modal { 
   background: var(--surface); border: 1px solid rgba(255,255,255,0.1); 
-  border-radius: 24px; width: 480px; padding: 28px; 
+  border-radius: 24px; width: 480px; max-width: 90vw; max-height: 85vh; padding: 28px; 
   transform: translateY(40px) scale(0.95); opacity: 0;
   transition: 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); 
   box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+  overflow-y: auto;
 }
 .modal-overlay.open .modal { transform: translateY(0) scale(1); opacity: 1;}
 .modal-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; }
@@ -787,17 +788,22 @@ body.light-mode .txn-item:hover {
 
 /* --- Premium Select Dropdown --- */
 select.premium-input {
-    appearance: none; /* Removes default browser styling */
+    appearance: none;
     -webkit-appearance: none;
     cursor: pointer;
     background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%238b9cc8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
     background-repeat: no-repeat;
     background-position: right 14px top 50%;
     background-size: 10px auto;
+    
+    /* THE FIX: Forces the browser's native dropdown menu into dark mode */
+    color-scheme: dark; 
 }
+
+/* Hardcode dark hex colors here because browsers sometimes ignore CSS variables on <option> tags */
 select.premium-input option {
-    background: var(--surface1); /* Keeps dropdown dark mode */
-    color: var(--text1);
+    background-color: #0f172a; 
+    color: #ffffff;
 }
 
 
@@ -854,7 +860,32 @@ body.light-mode .type-btn:hover { background: var(--surface2); }
 body.light-mode .modal-close { background: var(--surface); }
 
 
-@media (max-width: 1024px) { .accounts-grid { grid-template-columns: repeat(2, 1fr); } }
+/* Modal responsive adjustments */
+@media (max-width: 768px) {
+  .modal {
+    width: 95vw;
+    max-height: 90vh;
+    padding: 20px;
+    margin: 20px;
+  }
+  
+  .modal-title {
+    font-size: 18px;
+  }
+  
+  .form-group {
+    margin-bottom: 16px;
+  }
+  
+  .premium-input {
+    padding: 14px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+}
+
+@media (max-width: 1024px) { 
+  .accounts-grid { grid-template-columns: repeat(2, 1fr); } 
+}
 @media (max-width: 768px) {
   .sidebar { transform: translateX(-100%); }
   .main { margin-left: 0; }

@@ -15,39 +15,6 @@
   <div class="logo-icon" style="width: 60px; height: 60px; font-size: 28px;">₹</div>
 </div>
 
-<!-- AUTH MODAL (With Sign Up Fields) -->
-<!-- <div class="auth-overlay" id="auth-overlay">
-  <div class="auth-card">
-    <div class="auth-title" id="auth-title">Login</div>
-    <div style="text-align:center; color:var(--text2); margin-bottom:24px;">Smart Expense Tracker</div>
-    <div id="auth-error" style="color:var(--red); font-size:12px; margin-bottom:12px; display:none; text-align:center;"></div>
-    
-    <div class="form-group"><input type="email" class="form-input" id="auth-email" placeholder="Email address"></div>
-    <div class="form-group"><input type="password" class="form-input" id="auth-password" placeholder="Password"></div>
-    
-    <div id="signup-fields" style="display:none;">
-      <div class="form-group"><input type="text" class="form-input" id="auth-name" placeholder="Full Name"></div>
-      <div class="form-group"><input type="text" class="form-input" id="auth-college" placeholder="College Name"></div>
-      <div class="form-group">
-        <select class="form-input" id="auth-year" style="color:var(--text2);" onchange="this.style.color='var(--text)'">
-          <option value="" disabled selected>Select Year</option>
-          <option value="1st Year" style="color:var(--text)">1st Year</option>
-          <option value="2nd Year" style="color:var(--text)">2nd Year</option>
-          <option value="3rd Year" style="color:var(--text)">3rd Year</option>
-          <option value="4th Year" style="color:var(--text)">4th Year</option>
-        </select>
-      </div>
-      <div class="form-group"><input type="number" class="form-input" id="auth-budget" placeholder="Monthly Pocket Money (₹)"></div>
-    </div>
-    
-    <button class="btn btn-primary" id="auth-btn" style="width:100%; justify-content:center; margin-bottom:12px;" onclick="window.handleAuth()">Login</button>
-    <div style="text-align:center; font-size:12px; color:var(--text2);">
-      <span id="auth-toggle-text">Don't have an account? </span>
-      <button onclick="window.toggleAuth()" id="auth-toggle-btn" style="background:none; border:none; color:var(--accent); font-weight:bold; cursor:pointer;">Sign Up</button>
-    </div>
-  </div>
-</div> -->
-
 <!-- AUTHENTICATION PAGE -->
 <div class="page active" id="page-auth" style="padding: 0; min-height: 100vh;">
     <div class="auth-split-layout">
@@ -82,6 +49,8 @@
                         <input type="password" id="login-password" class="form-input premium-input" placeholder="••••••••••••" required>
                     </div>
 
+                    <div class="auth-error-msg" style="color: #ff6b6b; font-size: 13px; text-align: center; margin-bottom: 16px; display: none;"></div>
+
                     <button type="submit" class="btn btn-primary btn-block auth-btn-main">
                         Authenticate <span style="margin-left: 8px;">→</span>
                     </button>
@@ -92,7 +61,7 @@
                 </form>
 
                 <p class="auth-footer-text">
-                    No access yet? <a href="#" class="accent-link">Request an account</a>
+                  No access yet? <a href="#" onclick="window.navigate('signup')" class="accent-link">Request an account</a>
                 </p>
             </div>
         </div>
@@ -199,11 +168,19 @@
                         </div>
                     </div>
 
-                    <!-- Row 5: Password -->
-                    <div class="form-group" style="margin-top: 20px; margin-bottom: 32px;">
-                        <label class="form-label premium-label">Master Password</label>
-                        <input type="password" id="signup-password" class="form-input premium-input" placeholder="••••••••••••" required>
+                    <!-- Row 5: Passwords (Side-by-Side Grid) -->
+                    <div class="form-row" style="margin-top: 20px; margin-bottom: 32px;">
+                        <div class="form-group">
+                            <label class="form-label premium-label">Master Password</label>
+                            <input type="password" id="signup-password" class="form-input premium-input" placeholder="••••••••" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label premium-label">Confirm Password</label>
+                            <input type="password" id="signup-password-confirm" class="form-input premium-input" placeholder="••••••••" required>
+                        </div>
                     </div>
+
+                    <div class="auth-error-msg" style="color: #ff6b6b; font-size: 13px; text-align: center; margin-bottom: 16px; display: none;"></div>
 
                     <button type="submit" class="btn btn-primary btn-block auth-btn-main">
                         Initialize Account <span style="margin-left: 8px;">→</span>
@@ -851,44 +828,55 @@
 
 <!-- ADD ACCOUNT MODAL -->
 <div class="modal-overlay" id="add-account-modal">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">Add Account</div>
-      <button class="modal-close" onclick="window.closeModal('add-account-modal')">✕</button>
-    </div>
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-title">Add Account</div>
+            <button class="modal-close" onclick="window.closeModal('add-account-modal')">✕</button>
+        </div>
+        <div class="card-body" style="padding-top: 20px;">
+            <form id="add-account-form" onsubmit="event.preventDefault(); window.submitNewAccount();">
+                
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label class="form-label premium-label">Account Name</label>
+                    <input type="text" id="new-acc-name" class="form-input premium-input" placeholder="e.g. Axis Bank" required style="width: 100%;">
+                </div>
 
-    <div class="form-group">
-      <label class="form-label">ACCOUNT NAME</label>
-      <input type="text" class="form-input" id="acc-name" placeholder="e.g. Axis Bank">
-    </div>
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label class="form-label premium-label">Account Type</label>
+                    <div class="input-with-icon">
+                        <span class="input-icon">🏦</span>
+                        <select id="new-acc-type" class="form-input premium-input" required style="width: 100%; padding-left: 36px;">
+                            <option value="savings">Savings Account</option>
+                            <option value="current">Current Account</option>
+                            <option value="wallet">Wallet</option>
+                        </select>
+                    </div>
+                </div>
 
-    <div class="form-row">
-      <div class="form-group half">
-        <label class="form-label">ACCOUNT TYPE</label>
-        <select class="form-select" id="acc-type">
-          <option value="savings">🏦 Savings Account</option>
-          <option value="current">💼 Current Account</option>
-          <option value="wallet">📱 Digital Wallet</option>
-        </select>
-      </div>
-      <div class="form-group half">
-        <label class="form-label">OPENING BALANCE (₹)</label>
-        <input type="number" class="form-input" id="acc-balance" placeholder="0">
-      </div>
-    </div>
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label class="form-label premium-label">Opening Balance (₹)</label>
+                    <div class="input-with-prefix">
+                        <span class="prefix">₹</span>
+                        <input type="number" id="new-acc-balance" class="form-input premium-input" placeholder="0" required style="width: 100%; padding-left: 36px;">
+                    </div>
+                </div>
 
-    <div class="form-group">
-      <label class="form-label">BANK NAME (OPTIONAL)</label>
-      <input type="text" class="form-input" id="acc-bank" placeholder="e.g. SBI, HDFC, ICICI">
-    </div>
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label class="form-label premium-label">Bank Name (Optional)</label>
+                    <input type="text" id="new-acc-bank" class="form-input premium-input" placeholder="e.g. SBI, HDFC, ICICI" style="width: 100%;">
+                </div>
 
-    <div class="form-group">
-      <label class="form-label">ACCOUNT NUMBER (OPTIONAL)</label>
-      <input type="text" class="form-input" id="acc-number" placeholder="Last 4 digits only">
-    </div>
+                <div class="form-group" style="margin-bottom: 32px;">
+                    <label class="form-label premium-label">Account Number (Optional)</label>
+                    <input type="text" id="new-acc-number" class="form-input premium-input" placeholder="Last 4 digits only" maxlength="4" style="width: 100%;">
+                </div>
 
-    <button class="btn btn-primary btn-block" onclick="window.saveAccount()">Add Account</button>
-  </div>
+                <button type="submit" class="btn btn-primary btn-block auth-btn-main" id="btn-save-account">
+                    Add Account
+                </button>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script type="module" src="app.js"></script>
