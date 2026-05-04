@@ -56,6 +56,12 @@ body {
   border-right: 1px solid var(--border); 
   display: flex; flex-direction: column; 
   position: fixed; top: 0; left: 0; height: 100vh; z-index: 100; 
+  transition: transform 0.3s ease;
+  transform: translateX(0); /* Default state for desktop */
+}
+
+.sidebar.mobile-open {
+  transform: translateX(0);
 }
 
 .sidebar-logo { padding: 24px 20px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
@@ -104,6 +110,12 @@ body {
   padding: 20px 28px; background: rgba(17, 24, 39, 0.8); 
   backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); 
   position: sticky; top: 0; z-index: 50; 
+}
+
+.topbar > div:first-child {
+  display: flex;
+  align-items: center;
+  flex: 1;
 }
 .page-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;}
 .page-subtitle { font-size: 13px; color: var(--text2); margin-top: 2px;}
@@ -163,6 +175,14 @@ body {
 .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 28px; }
 .grid-3 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; margin-bottom: 28px; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 28px; }
+
+/* Profile Page Specific Grid */
+.profile-grid { 
+  display: grid; 
+  grid-template-columns: 1fr 2fr; 
+  gap: 24px; 
+  margin-bottom: 28px; 
+}
 
 /* =========================================
    STAT CARDS (With Glowing Borders)
@@ -810,6 +830,156 @@ select.premium-input option {
 
 
 /* =========================================
+   NOTIFICATION SYSTEM (Top-right Corner)
+========================================= */
+.notification-container {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 350px;
+  pointer-events: none;
+}
+
+.notification-container > * {
+  pointer-events: auto;
+}
+
+.notification {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  animation: slideInRight 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.notification:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+}
+
+.notification.warning {
+  border-left: 4px solid var(--orange);
+}
+
+.notification.error {
+  border-left: 4px solid var(--red);
+}
+
+.notification.success {
+  border-left: 4px solid var(--green);
+}
+
+.notification.info {
+  border-left: 4px solid var(--accent4);
+}
+
+.notification-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.notification.warning .notification-icon {
+  background: rgba(251, 146, 60, 0.1);
+  color: var(--orange);
+}
+
+.notification.error .notification-icon {
+  background: rgba(255, 107, 107, 0.1);
+  color: var(--red);
+}
+
+.notification.success .notification-icon {
+  background: rgba(0, 229, 160, 0.1);
+  color: var(--green);
+}
+
+.notification.info .notification-icon {
+  background: rgba(107, 203, 255, 0.1);
+  color: var(--accent4);
+}
+
+.notification-content {
+  flex: 1;
+}
+
+.notification-title {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+
+.notification-message {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.4;
+}
+
+.notification-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  font-size: 16px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.notification-close:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Mobile responsiveness for notifications */
+@media (max-width: 768px) {
+  .notification-container {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+  
+  .notification {
+    padding: 12px;
+  }
+}
+
+/* =========================================
    TOASTS (Smooth Slide & Glow)
 ========================================= */
 .toast-container { position: fixed; bottom: 30px; right: 30px; z-index: 999; display: flex; flex-direction: column; gap: 12px; }
@@ -857,6 +1027,61 @@ select.premium-input option {
 /* Light Mode Overrides for Modal */
 body.light-mode .type-btn { background: var(--surface); }
 body.light-mode .type-btn:hover { background: var(--surface2); }
+
+/* =========================================
+   NOTIFICATION BELL & DROPDOWN
+========================================= */
+.notification-bell-container { position: relative; }
+.notification-bell { position: relative; transition: var(--transition-smooth); }
+.notification-bell:hover { background: var(--surface2) !important; transform: scale(1.05); }
+
+.notification-dot { 
+  animation: pulse-dot 2s infinite;
+  box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7);
+}
+
+@keyframes pulse-dot {
+  0% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7); }
+  70% { box-shadow: 0 0 0 6px rgba(255, 107, 107, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0); }
+}
+
+.notification-dropdown { 
+  animation: dropdown-slide 0.2s ease-out;
+  backdrop-filter: blur(10px);
+}
+
+@keyframes dropdown-slide {
+  from { 
+    opacity: 0; 
+    transform: translateY(-10px) scale(0.95); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+  }
+}
+
+.notification-dropdown-header {
+  background: var(--surface2);
+  backdrop-filter: blur(5px);
+}
+
+.notification-item:hover {
+  background: var(--surface2) !important;
+}
+
+.notification-item:last-child {
+  border-bottom: none !important;
+}
+
+/* Mobile responsiveness for notification dropdown */
+@media (max-width: 768px) {
+  .notification-dropdown {
+    width: 280px;
+    right: -20px;
+  }
+}
 body.light-mode .modal-close { background: var(--surface); }
 
 
@@ -887,12 +1112,170 @@ body.light-mode .modal-close { background: var(--surface); }
   .accounts-grid { grid-template-columns: repeat(2, 1fr); } 
 }
 @media (max-width: 768px) {
-  .sidebar { transform: translateX(-100%); }
-  .main { margin-left: 0; }
-  .stats-grid, .grid-3, .grid-2 { grid-template-columns: 1fr; }
-  .accounts-grid { grid-template-columns: 1fr; }
+  .sidebar { 
+    transform: translateX(-100%); 
+    width: 280px; /* Slightly wider for mobile touch */
+    z-index: 1001; /* Ensure sidebar is above overlay */
+  }
+  
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+  
+  .main { 
+    margin-left: 0; 
+  }
+  
+  .content {
+    padding: 16px; /* Add padding for mobile */
+  }
+  
+  .topbar {
+    padding: 16px 20px; /* Adjust topbar for mobile */
+  }
+  .stats-grid, .grid-3, .grid-2, .profile-grid { 
+    grid-template-columns: 1fr; 
+    gap: 12px; /* Reduce gap on mobile */
+  }
+  .accounts-grid { 
+    grid-template-columns: 1fr; 
+    gap: 16px; /* Consistent gap */
+  }
+  
+  /* Fix mobile navigation items */
+  .nav-item {
+    padding: 16px 12px;
+    font-size: 15px; /* Larger touch targets */
+    border-radius: 8px;
+  }
+  
+  .nav-item:hover {
+    transform: none; /* Remove slide effect on mobile for better UX */
+  }
+  
+  .nav-item.active::before {
+    width: 3px;
+    height: 16px;
+  }
+  
+  /* Fix mobile cards */
+  .card, .stat-card {
+    margin-bottom: 16px;
+    border-radius: 12px;
+  }
+  
+  /* Fix mobile buttons */
+  .btn {
+    padding: 12px 20px;
+    font-size: 14px;
+    min-height: 44px; /* iOS touch target size */
+  }
+  
+  /* Fix mobile modals */
+  .modal {
+    width: 95vw;
+    max-height: 85vh;
+    padding: 20px;
+  }
+  
+  /* Fix mobile forms */
+  .form-input, .form-select {
+    padding: 16px;
+    font-size: 16px;
+    min-height: 44px;
+  }
+  
+  /* Fix mobile text */
+  .page-title {
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+  
+  /* Hide some elements on very small screens */
+  @media (max-width: 480px) {
+    .sidebar-logo {
+      padding: 16px;
+    }
+    .logo-text {
+      font-size: 14px;
+    }
+    .nav-section-label {
+      font-size: 9px;
+      padding: 6px 8px 4px;
+    }
+  }
 }
 
+
+/* Mobile Menu Toggle */
+.mobile-menu-toggle {
+  display: none;
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 18px;
+  box-shadow: 0 4px 12px rgba(0, 229, 160, 0.3);
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  margin-right: 16px;
+}
+
+.mobile-menu-toggle:hover {
+  background: var(--accent);
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 229, 160, 0.4);
+}
+
+.mobile-menu-toggle:active {
+  transform: scale(0.95);
+}
+
+/* Mobile Menu Overlay */
+.mobile-menu-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.mobile-menu-overlay.show {
+  display: block;
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .mobile-menu-toggle {
+    display: flex;
+  }
+  
+  .mobile-menu-overlay.show {
+    display: block;
+  }
+  
+  /* Ensure sidebar is hidden by default on mobile */
+  .sidebar:not(.mobile-open) {
+    transform: translateX(-100%);
+  }
+  
+  /* Add smooth transition for sidebar */
+  .sidebar {
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+}
 
 /* =========================================
    LIGHT MODE THEME (Enhanced Premium)

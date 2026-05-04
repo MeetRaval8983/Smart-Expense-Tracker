@@ -23,6 +23,220 @@ let analyticsMonthlyInst = null;
 let analyticsTrendInst = null;
 
 // ==============================
+// NOTIFICATION SYSTEM (Bell Dropdown + Top-right Corner)
+// ==============================
+let notificationId = 0;
+let activeNotifications = []; // Store notifications for dropdown display
+
+window.showNotification = (title, message, type = 'info', persistent = true) => {
+    // Store notification for dropdown
+    const notification = {
+        id: `notification-${notificationId++}`,
+        title,
+        message,
+        type,
+        timestamp: new Date(),
+        persistent
+    };
+    
+    activeNotifications.unshift(notification); // Add to beginning of array
+    
+    // Show notification dot if there are unread notifications
+    updateNotificationDot();
+    
+    // Update dropdown content
+    updateNotificationDropdown();
+    
+    // Also show floating notification for immediate visibility (optional)
+    if (persistent) {
+        showFloatingNotification(notification);
+    }
+};
+
+// Show floating notification (existing behavior)
+function showFloatingNotification(notification) {
+    const container = document.getElementById('notifications');
+    if (!container) return;
+    
+    const notificationEl = document.createElement('div');
+    notificationEl.className = `notification ${notification.type}`;
+    notificationEl.id = notification.id;
+    
+    const icons = {
+        warning: '⚠️',
+        error: '❌', 
+        success: '✅',
+        info: 'ℹ️'
+    };
+    
+    notificationEl.innerHTML = `
+        <div class="notification-icon">${icons[notification.type]}</div>
+        <div class="notification-content">
+            <div class="notification-title">${notification.title}</div>
+            <div class="notification-message">${notification.message}</div>
+        </div>
+        <button class="notification-close" onclick="window.dismissNotification('${notification.id}')">✕</button>
+    `;
+    
+    container.appendChild(notificationEl);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        window.dismissNotification(notification.id);
+    }, 5000);
+}
+
+// Update notification dot visibility
+function updateNotificationDot() {
+    const dot = document.getElementById('notification-dot');
+    if (dot) {
+        const hasUnread = activeNotifications.length > 0;
+        dot.style.display = hasUnread ? 'block' : 'none';
+    }
+}
+
+// Update notification dropdown content
+function updateNotificationDropdown() {
+    const content = document.getElementById('notification-dropdown-content');
+    if (!content) return;
+    
+    if (activeNotifications.length === 0) {
+        content.innerHTML = `
+            <div style="padding: 32px 16px; text-align: center; color: var(--text3);">
+                <div style="font-size: 24px; margin-bottom: 8px;">🔔</div>
+                <div style="font-size: 14px;">No notifications yet</div>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    activeNotifications.forEach(notification => {
+        const timeAgo = getTimeAgo(notification.timestamp);
+        const icons = {
+            warning: '⚠️',
+            error: '❌', 
+            success: '✅',
+            info: 'ℹ️'
+        };
+        
+        html += `
+            <div class="notification-item" style="padding: 12px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'">
+                <div style="display: flex; gap: 12px; align-items: flex-start;">
+                    <div class="notification-item-icon" style="width: 32px; height: 32px; border-radius: 6px; background: ${getNotificationColor(notification.type, 'bg')}; color: ${getNotificationColor(notification.type, 'text')}; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px;">
+                        ${icons[notification.type]}
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div class="notification-item-title" style="font-weight: 600; color: var(--text1); font-size: 14px; margin-bottom: 4px; line-height: 1.3;">
+                            ${notification.title}
+                        </div>
+                        <div class="notification-item-message" style="color: var(--text2); font-size: 13px; line-height: 1.4; margin-bottom: 4px;">
+                            ${notification.message}
+                        </div>
+                        <div class="notification-item-time" style="color: var(--text3); font-size: 11px;">
+                            ${timeAgo}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    content.innerHTML = html;
+}
+
+// Get notification color based on type
+function getNotificationColor(type, variant) {
+    const colors = {
+        warning: { bg: 'rgba(251, 146, 60, 0.1)', text: 'var(--orange)' },
+        error: { bg: 'rgba(255, 107, 107, 0.1)', text: 'var(--red)' },
+        success: { bg: 'rgba(0, 229, 160, 0.1)', text: 'var(--green)' },
+        info: { bg: 'rgba(107, 203, 255, 0.1)', text: 'var(--accent4)' }
+    };
+    return colors[type] ? colors[type][variant] : colors.info[variant];
+}
+
+// Get time ago string
+function getTimeAgo(timestamp) {
+    const now = new Date();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    return `${days} day${days > 1 ? 's' : ''} ago`;
+}
+
+window.dismissNotification = (id) => {
+    const notification = document.getElementById(id);
+    if (notification) {
+        notification.style.animation = 'slideInRight 0.3s ease reverse';
+        setTimeout(() => notification.remove(), 300);
+    }
+};
+
+window.toggleNotificationDropdown = () => {
+    const dropdown = document.getElementById('notification-dropdown');
+    if (!dropdown) return;
+    
+    const isVisible = dropdown.style.display !== 'none';
+    dropdown.style.display = isVisible ? 'none' : 'block';
+    
+    // Mark notifications as read when dropdown is opened
+    if (!isVisible) {
+        // Optional: Clear the notification dot when opened
+        setTimeout(() => {
+            const dot = document.getElementById('notification-dot');
+            if (dot) dot.style.display = 'none';
+        }, 100);
+    }
+};
+
+window.clearAllNotifications = () => {
+    // Clear stored notifications
+    activeNotifications = [];
+    
+    // Clear floating notifications
+    const container = document.getElementById('notifications');
+    if (container) {
+        container.innerHTML = '';
+    }
+    
+    // Update dropdown
+    updateNotificationDropdown();
+    updateNotificationDot();
+};
+
+// Test notification function for debugging
+window.testNotification = () => {
+    console.log('Testing notification...');
+    window.showNotification('Test Alert', 'This is a test notification to check visibility', 'info');
+};
+
+// Chart type switching function
+window.setChartType = (type) => {
+    // Remove active class from all chart buttons
+    document.querySelectorAll('.chart-toggle').forEach(btn => btn.classList.remove('active'));
+    
+    // Add active class to clicked button
+    const activeBtn = document.getElementById(`btn-chart-${type}`);
+    if (activeBtn) activeBtn.classList.add('active');
+    
+    // Here you would typically update the actual chart rendering
+    // For now, this just handles the button states
+};
+
+// Auto-test notification after 2 seconds of page load
+setTimeout(() => {
+    if (currentUser) {
+        window.showNotification('Welcome!', 'Notification system is working. Budget alerts will appear here.', 'success');
+    }
+}, 2000);
+
+// ==============================
 // TOAST NOTIFICATIONS (Like Image 3)
 // ==============================
 function showToast(message, type = 'success') {
@@ -81,8 +295,6 @@ if (signupForm) {
         
         const name = document.getElementById('signup-name').value;
         const email = document.getElementById('signup-email').value;
-        const college = document.getElementById('signup-college').value;
-        const year = document.getElementById('signup-year').value;
         const budget = document.getElementById('signup-budget').value;
         const password = document.getElementById('signup-password').value;
         
@@ -114,8 +326,6 @@ if (signupForm) {
                 profile: {
                     name: name,
                     email: email,
-                    college: college,
-                    year: year,
                     budget: Number(budget)
                 }
             });
@@ -252,6 +462,14 @@ window.navigate = (page, el) => {
         profile: 'My Profile'
     };
     document.getElementById('page-title').innerText = titles[page] || 'Smart Expense';
+    
+    // 4. Close mobile menu after navigation
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('mobile-menu-overlay');
+    if (sidebar && overlay && window.innerWidth <= 768) {
+        sidebar.classList.remove('mobile-open');
+        overlay.classList.remove('show');
+    }
 
     // 4. Page-Specific Triggers (THIS IS THE FIX)
     if(page === 'transactions') window.applyFilters();
@@ -288,7 +506,6 @@ window.navigate = (page, el) => {
         // Pre-fill profile settings
         document.getElementById('set-name').value = document.getElementById('profile-full-name').innerText;
         document.getElementById('set-budget').value = globalBudget;
-        document.getElementById('set-college').value = document.getElementById('profile-college-tag').innerText.split(' • ')[0];
     }
 };
 
@@ -351,7 +568,70 @@ window.openModal = (id) => {
     }
 };
 window.closeModal = (id) => document.getElementById(id).classList.remove('open');
-window.closeModal = (id) => document.getElementById(id).classList.remove('open');
+
+// Mobile Menu Toggle
+window.toggleMobileMenu = () => {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('mobile-menu-overlay');
+    if (sidebar && overlay) {
+        const isOpen = sidebar.classList.contains('mobile-open');
+        
+        if (isOpen) {
+            sidebar.classList.remove('mobile-open');
+            overlay.classList.remove('show');
+        } else {
+            sidebar.classList.add('mobile-open');
+            overlay.classList.add('show');
+        }
+    }
+};
+
+// Close mobile menu when clicking outside
+document.addEventListener('click', (e) => {
+    const sidebar = document.querySelector('.sidebar');
+    const menuToggle = document.querySelector('.mobile-menu-toggle');
+    const overlay = document.getElementById('mobile-menu-overlay');
+    const notificationDropdown = document.getElementById('notification-dropdown');
+    const notificationBell = document.querySelector('.notification-bell');
+    
+    if (sidebar && window.innerWidth <= 768) {
+        if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
+            sidebar.classList.remove('mobile-open');
+            if (overlay) overlay.classList.remove('show');
+        }
+    }
+    
+    // Close notification dropdown when clicking outside
+    if (notificationDropdown && notificationBell) {
+        if (!notificationBell.contains(e.target) && !notificationDropdown.contains(e.target)) {
+            notificationDropdown.style.display = 'none';
+        }
+    }
+});
+
+// Close mobile menu when pressing Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.getElementById('mobile-menu-overlay');
+        
+        if (sidebar && sidebar.classList.contains('mobile-open')) {
+            sidebar.classList.remove('mobile-open');
+            if (overlay) overlay.classList.remove('show');
+        }
+    }
+});
+
+// Handle window resize - close mobile menu if switching to desktop
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) {
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.getElementById('mobile-menu-overlay');
+        
+        if (sidebar) sidebar.classList.remove('mobile-open');
+        if (overlay) overlay.classList.remove('show');
+    }
+});
 // Toggle Expense/Income dynamically
 window.setTxnType = (type) => {
     document.getElementById('txn-type').value = type;
@@ -467,6 +747,20 @@ window.saveTransaction = async () => {
         document.getElementById('txn-amount').value = '';
         document.getElementById('txn-note').value = '';
         
+        // Show transaction added notification
+        const transactionType = type === 'income' ? 'Income' : 'Expense';
+        const icon = type === 'income' ? '📈' : '💳';
+        window.showNotification(
+            `${transactionType} Added`, 
+            `${icon} ${desc}: ₹${amount.toLocaleString('en-IN')}`, 
+            type === 'income' ? 'success' : 'info'
+        );
+        
+        // Check category budget exceedance after adding transaction
+        if (type === 'expense') {
+            checkCategoryBudgetExceedance(category, amount);
+        }
+        
         showToast('Transaction added and balance updated!');
     } catch (e) {
         // Error saving transaction
@@ -475,6 +769,56 @@ window.saveTransaction = async () => {
         btn.innerText = originalText;
     }
 };
+
+// --- CATEGORY BUDGET EXCEEDANCE CHECK ---
+function checkCategoryBudgetExceedance(category, amount) {
+    const categoryBudget = globalCategoryBudgets[category];
+    if (!categoryBudget) return;
+    
+    // Calculate current spending for this category this month
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    let categorySpent = 0;
+    allTransactionsGlobal.forEach(t => {
+        if (t.type === 'expense' && t.category === category) {
+            const d = new Date(t.date);
+            if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+                categorySpent += t.amount;
+            }
+        }
+    });
+    
+    const limit = categoryBudget.limit;
+    const threshold = categoryBudget.threshold || 80;
+    const percentage = (categorySpent / limit) * 100;
+    
+    const categoryNames = {
+        food: 'Mess & Food',
+        study: 'Study', 
+        hostel: 'Hostel',
+        travel: 'Transport',
+        shopping: 'Shopping',
+        other: 'Other'
+    };
+    
+    const categoryName = categoryNames[category] || category.toUpperCase();
+    
+    if (percentage >= 100) {
+        window.showNotification(
+            'Category Budget Exceeded',
+            `🚨 ${categoryName}: ₹${categorySpent.toLocaleString('en-IN')} / ₹${limit.toLocaleString('en-IN')} (${percentage.toFixed(0)}%)`,
+            'error'
+        );
+    } else if (percentage >= threshold) {
+        window.showNotification(
+            'Category Budget Warning',
+            `⚠️ ${categoryName}: ₹${categorySpent.toLocaleString('en-IN')} / ₹${limit.toLocaleString('en-IN')} (${percentage.toFixed(0)}%)`,
+            'warning'
+        );
+    }
+}
 
 // --- DELETE TRANSACTION ---
 window.confirmDelete = (id, name) => {
@@ -501,6 +845,12 @@ let hasWelcomed = false;
 function loadData() {
     if (!currentUser) return;
     
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadData);
+        return;
+    }
+    
     // 1. Profile Listener
     // --- 1. PROFILE & TOTAL BUDGET LISTENER ---
     unsubProfile = onSnapshot(doc(db, "users", currentUser.uid), (docSnap) => {
@@ -515,11 +865,9 @@ function loadData() {
 
             // Update the Sidebar Profile Card
             const navName = document.getElementById('nav-name');
-            const navMeta = document.getElementById('nav-meta');
             const navAvatar = document.getElementById('nav-avatar');
             
             if (navName) navName.innerText = userData.name || 'User';
-            if (navMeta) navMeta.innerText = `${userData.college || 'Welcome'} • ${userData.year ? userData.year + ' Year' : ''}`;
             if (navAvatar && userData.name) navAvatar.innerText = userData.name.charAt(0).toUpperCase();
 
             // Re-render the UI elements that depend on the Total Budget
@@ -580,6 +928,18 @@ function loadData() {
         
         const remaining = Math.max(0, globalBudget - totalExpense);
         document.getElementById('stat-budget-sub').innerText = `₹${remaining.toLocaleString('en-IN')} remaining`;
+        
+        // Check for budget alerts and show notifications
+        if (budgetPct >= 100) {
+            window.showNotification('Budget Exceeded', `You've spent ₹${totalExpense.toLocaleString('en-IN')} which exceeds your monthly budget of ₹${globalBudget.toLocaleString('en-IN')}`, 'error');
+        } else if (budgetPct >= 80) {
+            window.showNotification('Budget Warning', `You've used ${budgetPct}% of your monthly budget. ₹${remaining.toLocaleString('en-IN')} remaining.`, 'warning');
+        }
+        
+        // Check all category budgets for exceedances
+        Object.keys(globalCategoryBudgets).forEach(category => {
+            checkCategoryBudgetExceedance(category);
+        });
 
         // 3. Render the lists and charts
         renderDashboardList(allTransactionsGlobal);
@@ -955,7 +1315,6 @@ function renderBudgetPage(transactions) {
     }
 }
 
-
 // ==============================
 // DELETE BUDGET LOGIC
 // ==============================
@@ -978,12 +1337,9 @@ window.deleteBudget = async (categoryId, categoryName) => {
     }
 };
 
-
-
 // ==============================
 // ACCOUNTS PAGE LOGIC
-// =============================
-
+// ==============================
 function renderAccountsUI() {
     const dashboardGrid = document.getElementById('dashboard-accounts-grid');
     const accountsList = document.getElementById('page-accounts-list');
@@ -992,19 +1348,6 @@ function renderAccountsUI() {
     const txnSelect = document.getElementById('txn-account');
     const transferFrom = document.getElementById('transfer-from');
     const transferTo = document.getElementById('transfer-to');
-
-    // Handle Empty State
-    if (globalAccounts.length === 0) {
-        const emptyMsg = `<p style="text-align:center; color:var(--text2); padding:20px; grid-column: 1/-1;">No accounts found. Please add an account.</p>`;
-        if (dashboardGrid) dashboardGrid.innerHTML = dashboardHtml;
-        if (accountsList) accountsList.innerHTML = listHtml;
-        
-        const emptyOption = `<option value="" disabled selected>No accounts available</option>`;
-        if(txnSelect) txnSelect.innerHTML = emptyOption;
-        if(transferFrom) transferFrom.innerHTML = emptyOption;
-        if(transferTo) transferTo.innerHTML = emptyOption;
-        return;
-    }
 
     let dashboardHtml = '';
     let listHtml = '';
@@ -1016,49 +1359,54 @@ function renderAccountsUI() {
         wallet: { icon: '📱', color: 'rgba(251, 146, 60, 0.1)', text: 'var(--orange)', bg: 'linear-gradient(135deg, #5c1e52, #3a1133)' }
     };
 
-    globalAccounts.forEach(acc => {
-        const ui = typeDetails[acc.type] || typeDetails.wallet;
-        
-        // 1. Build Dashboard Card
-        dashboardHtml += `
-            <div class="account-card" style="background: ${ui.bg}">
-                <div class="account-icon">${ui.icon}</div>
-                <div class="account-type">${acc.type.toUpperCase()}</div>
-                <div class="account-balance">₹${acc.balance.toLocaleString('en-IN')}</div>
-                <div class="account-name">${acc.name}</div>
-            </div>`;
+    if (globalAccounts.length > 0) {
+        globalAccounts.forEach(acc => {
+            const ui = typeDetails[acc.type] || typeDetails.wallet;
+            const balance = acc.balance || 0;
+            
+            // Dashboard Card HTML
+            dashboardHtml += `
+                <div class="account-card" style="background: ${ui.bg}; border-radius: 12px; padding: 20px; color: white; position: relative; overflow: hidden;">
+                    <div class="account-icon" style="font-size: 24px; margin-bottom: 12px;">${ui.icon}</div>
+                    <div class="account-type" style="font-size: 12px; opacity: 0.8; margin-bottom: 8px;">${acc.type.toUpperCase()}</div>
+                    <div class="account-balance" style="font-size: 24px; font-weight: bold; margin-bottom: 4px;">₹${balance.toLocaleString('en-IN')}</div>
+                    <div class="account-name" style="font-size: 14px; opacity: 0.9;">${acc.name}</div>
+                </div>`;
 
-        // 2. Build Accounts Page List Item (Includes the Trash Icon)
-        const bankInfo = acc.bankName ? `<div style="font-size: 11px; color: var(--text3);">${acc.bankName}</div>` : '';
-        const accountInfo = acc.accountNumber ? `<div style="font-size: 11px; color: var(--text3);">****${acc.accountNumber}</div>` : '';
-        
-        listHtml += `
-            <div class="acc-list-item">
-                <div class="acc-list-icon" style="background: ${ui.color}; color: ${ui.text};">${ui.icon}</div>
-                <div class="acc-list-info">
-                    <div class="acc-list-name">${acc.name}</div>
-                    <div class="acc-list-type">${acc.type.toUpperCase()}</div>
-                    ${bankInfo}
-                    ${accountInfo}
-                </div>
-                <div class="acc-list-right" style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
-                    <div class="acc-list-bal">₹${acc.balance.toLocaleString('en-IN')}</div>
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <div class="acc-list-status">Active</div>
-                        <button onclick="window.deleteAccount('${acc.id}', '${acc.name}')" style="background: none; border: none; cursor: pointer; color: var(--text3); font-size: 14px; transition: color 0.2s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text3)'" title="Delete Account">🗑️</button>
+            // List View HTML (for Accounts page)
+            const bankInfo = acc.bankName ? `<div style="font-size: 11px; color: var(--text3);">${acc.bankName}</div>` : '';
+            const accountInfo = acc.accountNumber ? `<div style="font-size: 11px; color: var(--text3);">****${acc.accountNumber}</div>` : '';
+            
+            listHtml += `
+                <div class="acc-list-item" style="display: flex; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--border);">
+                    <div class="acc-list-icon" style="background: ${ui.color}; color: ${ui.text}; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;">${ui.icon}</div>
+                    <div class="acc-list-info" style="flex: 1;">
+                        <div class="acc-list-name" style="font-weight: 600; color: var(--text1); margin-bottom: 4px;">${acc.name}</div>
+                        <div class="acc-list-type" style="font-size: 13px; color: var(--text2);">${acc.type.toUpperCase()}</div>
+                        ${bankInfo}
+                        ${accountInfo}
                     </div>
-                </div>
-            </div>`;
+                    <div class="acc-list-right" style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                        <div class="acc-list-bal" style="font-weight: 700; color: var(--text1);">₹${balance.toLocaleString('en-IN')}</div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div class="acc-list-status" style="font-size: 12px; color: var(--green);">Active</div>
+                            <button onclick="window.deleteAccount('${acc.id}', '${acc.name}')" style="background: none; border: none; cursor: pointer; color: var(--text3); font-size: 14px; transition: color 0.2s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text3)'" title="Delete Account">🗑️</button>
+                        </div>
+                    </div>
+                </div>`;
 
             optionsHtml += `<option value="${acc.id}">${ui.icon} ${acc.name}</option>`;
-    });
+        });
+    }
 
-    if(dashboardGrid) dashboardGrid.innerHTML = dashboardHtml;
-    if(accountsList) accountsList.innerHTML = listHtml;
-    
-    if(txnSelect) txnSelect.innerHTML = optionsHtml;
-    if(transferFrom) transferFrom.innerHTML = optionsHtml;
-    if(transferTo) transferTo.innerHTML = optionsHtml;
+    // Update Dashboard
+    if (dashboardGrid) dashboardGrid.innerHTML = dashboardHtml || '<p style="text-align:center; color:var(--text2); padding:20px;">No accounts found.</p>';
+    if (accountsList) accountsList.innerHTML = listHtml || '<p style="text-align:center; color:var(--text2); padding:20px;">No accounts found.</p>';
+
+    // Update Select Dropdowns
+    if(txnSelect) txnSelect.innerHTML = optionsHtml || '<option value="" disabled selected>No accounts available</option>';
+    if(transferFrom) transferFrom.innerHTML = optionsHtml || '<option value="" disabled selected>No accounts available</option>';
+    if(transferTo) transferTo.innerHTML = optionsHtml || '<option value="" disabled selected>No accounts available</option>';
 }
 
 // --- ACCOUNTS PAGE: BALANCE TREND CHART ---
@@ -1661,116 +2009,4 @@ window.renderBudgetBars = (transactions) => {
     if (typeof window.renderDashboardBudgets === 'function') window.renderDashboardBudgets(transactions);
 };
 
-window.renderDashboardBudgets = (transactions) => {
-    const container = document.getElementById('dashboard-budget-status');
-    if (!container) return;
 
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    // 1. Calculate spent amounts
-    const spentData = {};
-    transactions.forEach(t => {
-        const d = new Date(t.date);
-        if (t.type === 'expense' && d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
-            spentData[t.category] = (spentData[t.category] || 0) + t.amount;
-        }
-    });
-
-    const titles = { food: 'Mess & Food', study: 'Study', hostel: 'Hostel', travel: 'Transport', shopping: 'Shopping', other: 'Other' };
-    let html = '';
-
-    // 2. Build the compact dashboard UI
-    for (const [cat, data] of Object.entries(globalCategoryBudgets)) {
-        const limit = data.limit;
-        const spent = spentData[cat] || 0;
-        const pct = Math.min(100, (spent / limit) * 100);
-
-        let color = 'var(--green)';
-        if (pct >= 100) color = 'var(--red)';
-        else if (pct >= (data.threshold || 80)) color = 'var(--orange)';
-
-        html += `
-        <div class="budget-mini-item">
-            <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px;">
-                <span style="color: var(--text2); font-weight: 600;">${titles[cat] || cat.toUpperCase()}</span>
-                <span style="color: var(--text1); font-weight: 700;">₹${spent.toLocaleString('en-IN')} <span style="color:var(--text3); font-weight:normal;">/ ₹${limit.toLocaleString('en-IN')}</span></span>
-            </div>
-            <div style="height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden;">
-                <div style="width: ${pct}%; background: ${color}; height: 100%; border-radius: 3px; transition: width 0.5s ease;"></div>
-            </div>
-        </div>`;
-    }
-
-    // Fallback if no budgets are set
-    if (Object.keys(globalCategoryBudgets).length === 0) {
-        html = `<div style="text-align:center; padding: 20px 0; color: var(--text3); font-size: 13px;">No category budgets set.</div>`;
-    }
-
-    container.innerHTML = html;
-};
-
-window.renderDashboardBudgets = (transactions) => {
-    const container = document.getElementById('dashboard-budget-status');
-    if (!container) return;
-
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    // 1. Calculate spent amounts
-    const spentData = {};
-    transactions.forEach(t => {
-        const d = new Date(t.date);
-        if (t.type === 'expense' && d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
-            spentData[t.category] = (spentData[t.category] || 0) + t.amount;
-        }
-    });
-
-    const titles = { food: 'Mess & Food', study: 'Study', hostel: 'Hostel', travel: 'Transport', shopping: 'Shopping', other: 'Other' };
-    let html = '';
-
-    // 2. Loop through the budgets saved in Firebase and draw the bars
-    for (const [cat, data] of Object.entries(globalCategoryBudgets)) {
-        const limit = data.limit;
-        const threshold = data.threshold || 80;
-        const spent = spentData[cat] || 0;
-        
-        const pct = Math.min(100, (spent / limit) * 100);
-        
-        let color = 'var(--green)';
-        let statusText = 'On track';
-        
-        if (pct >= 100) { color = 'var(--red)'; statusText = 'Limit Exceeded'; }
-        else if (pct >= threshold) { color = 'var(--orange)'; statusText = 'Near Limit'; }
-
-        html += `
-        <div class="card" style="margin-bottom: 16px;">
-            <div class="card-body">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                    <div style="font-weight: bold; color: var(--text1);">${titles[cat] || cat.toUpperCase()}</div>
-                    <div style="color: var(--text2);">₹${spent.toLocaleString('en-IN')} / ₹${limit.toLocaleString('en-IN')}</div>
-                </div>
-                
-                <div class="budget-bar" style="height: 6px; margin-bottom: 12px; background: var(--surface2); border-radius: 3px; overflow: hidden;">
-                    <div class="budget-fill" style="width: ${pct}%; background: ${color}; height: 100%; border-radius: 3px; transition: width 0.5s ease;"></div>
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text3);">
-                    <div style="color: ${color}; font-weight: bold;">${statusText}</div>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <div>₹${Math.max(0, limit - spent).toLocaleString('en-IN')} remaining</div>
-                        <button onclick="window.deleteBudget('${cat}', '${titles[cat] || cat}')" style="background: none; border: none; cursor: pointer; color: var(--text3); font-size: 14px; transition: color 0.2s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text3)'" title="Remove Budget">🗑️</button>
-                    </div>
-                </div>
-            </div>
-        </div>`;
-    }
-
-    if(Object.keys(globalCategoryBudgets).length === 0) {
-        html = `<div style="text-align:center; padding: 20px; color: var(--text3); background: var(--surface2); border-radius: 8px;">No specific category budgets set yet. Click + to add one.</div>`;
-    }
-
-    container.innerHTML = html;
-};

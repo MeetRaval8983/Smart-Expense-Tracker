@@ -4,11 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Smart Expense Tracker</title>
+<link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='.9em'>💰</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+<!-- Mobile Menu Overlay -->
+<div class="mobile-menu-overlay" id="mobile-menu-overlay"></div>
 
 <!-- GLOBAL LOADING SCREEN -->
 <div id="global-loader" style="position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; transition: opacity 0.4s ease;">
@@ -138,33 +142,12 @@
                         <input type="email" id="signup-email" class="form-input premium-input" placeholder="name@domain.com" required>
                     </div>
 
-                    <!-- Row 3: College -->
+                    <!-- Row 3: Budget Only -->
                     <div class="form-group" style="margin-top: 20px;">
-                        <label class="form-label premium-label">Institution / College</label>
-                        <input type="text" id="signup-college" class="form-input premium-input" placeholder="e.g., DYPIT Pune" required>
-                    </div>
-
-                    <!-- Row 4: Year & Budget (Side-by-Side Grid) -->
-                    <div class="form-row" style="margin-top: 20px;">
-                        <div class="form-group">
-                            <label class="form-label premium-label">Current Year</label>
-                            <div class="custom-select-wrapper">
-                                <select id="signup-year" class="form-input premium-input" required>
-                                    <option value="" disabled selected>Select...</option>
-                                    <option value="1">1st Year (FE)</option>
-                                    <option value="2">2nd Year (SE)</option>
-                                    <option value="3">3rd Year (TE)</option>
-                                    <option value="4">4th Year (BE)</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label premium-label">Monthly Target</label>
-                            <div class="input-with-prefix">
-                                <span class="prefix">₹</span>
-                                <input type="number" id="signup-budget" class="form-input premium-input" placeholder="15000" style="padding-left: 36px;" required>
-                            </div>
+                        <label class="form-label premium-label">Monthly Target</label>
+                        <div class="input-with-prefix">
+                            <span class="prefix">₹</span>
+                            <input type="number" id="signup-budget" class="form-input premium-input" placeholder="15000" style="padding-left: 36px;" required>
                         </div>
                     </div>
 
@@ -269,7 +252,6 @@
         <div class="user-avatar-sm" id="nav-avatar">M</div>
         <div class="user-info-sm">
           <div class="user-name-sm" id="nav-name">Meet Raval</div>
-          <div class="user-meta-sm" id="nav-meta">DYPIT, Pimpri • 3rd Year</div>
         </div>
         <div class="user-settings-icon">⚙️</div>
       </div>
@@ -281,6 +263,8 @@
     
     <!-- 3. TOPBAR (Must be right here!) -->
     <div class="topbar">
+      <!-- Mobile Menu Toggle -->
+      <button class="mobile-menu-toggle" onclick="window.toggleMobileMenu()">☰</button>
       <div>
         <div class="page-title" id="page-title">Dashboard</div>
         <div class="page-subtitle" id="page-subtitle">Welcome back! 👋</div>
@@ -289,6 +273,26 @@
       <!-- Theme Toggle & Add Button -->
       <div style="display: flex; align-items: center; gap: 12px;">
         <button class="btn btn-ghost" id="theme-toggle" onclick="window.toggleTheme()" style="width: 42px; height: 42px; padding: 0; justify-content: center; font-size: 18px; border-radius: 50%;">☀️</button>
+        
+        <!-- Notification Bell -->
+        <div class="notification-bell-container" style="position: relative;">
+          <button class="btn btn-ghost notification-bell" onclick="window.toggleNotificationDropdown()" style="width: 42px; height: 42px; padding: 0; justify-content: center; font-size: 18px; border-radius: 50%; position: relative;">
+            🔔
+            <span class="notification-dot" id="notification-dot" style="display: none; position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; background: var(--red); border-radius: 50%; border: 2px solid var(--bg);"></span>
+          </button>
+          
+          <!-- Notification Dropdown -->
+          <div class="notification-dropdown" id="notification-dropdown" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; width: 320px; max-height: 400px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 1000; overflow: hidden;">
+            <div class="notification-dropdown-header" style="padding: 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+              <div style="font-weight: 600; color: var(--text1);">Notifications</div>
+              <button class="btn btn-ghost" onclick="window.clearAllNotifications()" style="padding: 4px 8px; font-size: 12px;">Clear All</button>
+            </div>
+            <div class="notification-dropdown-content" id="notification-dropdown-content" style="max-height: 300px; overflow-y: auto;">
+              <!-- Notifications will be populated here -->
+            </div>
+          </div>
+        </div>
+        
         <button class="btn btn-primary" onclick="window.openModal('add-txn-modal')">+ Add Transaction</button>
       </div>
     </div>
@@ -655,14 +659,13 @@
 
       <!-- PROFILE PAGE -->
       <div class="page" id="page-profile" style="padding: 24px;"> <!-- Fixed the spacing issue here -->
-        <div class="grid-3" style="grid-template-columns: 1fr 2fr; gap: 24px;">
+        <div class="profile-grid">
           
           <!-- LEFT: IDENTITY CARD -->
           <div class="card">
             <div class="card-body" style="text-align: center; padding: 40px 24px;">
               <div class="profile-avatar-lg" id="profile-avatar-lg">M</div>
               <h2 id="profile-full-name">Meet Raval</h2>
-              <p class="card-subtitle" id="profile-college-tag">DYPIT, Pimpri • 3rd Year</p>
               
               <!-- Financial Discipline Score -->
               <div class="discipline-meter">
@@ -695,23 +698,7 @@
                 </div>
               </div>
 
-              <!-- ADDED YEAR DROPDOWN BACK HERE -->
-              <div class="form-row">
-                <div class="form-group half">
-                  <label class="form-label">Institution</label>
-                  <input type="text" class="form-input" id="set-college" value="Dr. D. Y. Patil Institute of Technology">
-                </div>
-                <div class="form-group half">
-                  <label class="form-label">Academic Year</label>
-                  <select class="form-select" id="set-year">
-                    <option value="1st Year">1st Year</option>
-                    <option value="2nd Year">2nd Year</option>
-                    <option value="3rd Year">3rd Year</option>
-                    <option value="4th Year">4th Year</option>
-                  </select>
-                </div>
-              </div>
-
+              
               <button class="btn btn-primary btn-block" onclick="window.updateProfile()" style="margin-top: 16px;">Sync Changes</button>
             </div>
           </div>
@@ -721,6 +708,9 @@
     </div>
   </div>
 </div>
+
+<!-- NOTIFICATION CONTAINER (Top-right corner) -->
+<div class="notification-container" id="notifications"></div>
 
 <!-- TOAST CONTAINER (For the Welcome message in Image 3) -->
 <div class="toast-container" id="toasts"></div>
