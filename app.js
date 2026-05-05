@@ -347,7 +347,11 @@ if (signupForm) {
 }
 
 // Global Logout
-window.logout = () => signOut(auth);
+window.logout = () => {
+    signOut(auth).then(() => {
+        window.location.reload();
+    });
+};
 
 // 3. Master Auth State Listener
 onAuthStateChanged(auth, (user) => {
@@ -371,14 +375,22 @@ onAuthStateChanged(auth, (user) => {
             window.navigate('dashboard', document.querySelectorAll('.nav-item')[0]);
         }
         
-        loadData(); // Load user's Firebase data
+        loadData();
     } else {
-        // Logged OUT: Hide App, Show Login Page
         document.getElementById('app').style.display = 'none';
         document.getElementById('page-signup').classList.remove('active');
         document.getElementById('page-auth').classList.add('active'); 
         
-        // Clear listeners so data doesn't leak
+        allTransactionsGlobal = [];
+        globalAccounts = []; 
+        globalCategoryBudgets = {};
+        globalBudget = 15000;
+        
+        const navName = document.getElementById('nav-name');
+        const navAvatar = document.getElementById('nav-avatar');
+        if (navName) navName.innerText = 'User';
+        if (navAvatar) navAvatar.innerText = 'U';
+
         if (unsubTxns) unsubTxns();
         if (unsubProfile) unsubProfile();
         if (unsubAccounts) unsubAccounts();
@@ -503,8 +515,9 @@ window.navigate = (page, el) => {
     
     if(page === 'profile') {
         document.getElementById('page-subtitle').innerText = 'Personalize your experience';
-        // Pre-fill profile settings
-        document.getElementById('set-name').value = document.getElementById('profile-full-name').innerText;
+        // Pre-fill profile settings with actual user data
+        const userName = currentUserProfile.name || document.getElementById('nav-name').innerText || 'User';
+        document.getElementById('set-name').value = userName;
         document.getElementById('set-budget').value = globalBudget;
     }
 };
@@ -869,6 +882,16 @@ function loadData() {
             
             if (navName) navName.innerText = userData.name || 'User';
             if (navAvatar && userData.name) navAvatar.innerText = userData.name.charAt(0).toUpperCase();
+
+            // Update Profile Page elements
+            const profileFullName = document.getElementById('profile-full-name');
+            const profileAvatar = document.getElementById('profile-avatar-lg');
+            
+            if (profileFullName) profileFullName.innerText = userData.name || 'User Name';
+            if (profileAvatar && userData.name) profileAvatar.innerText = userData.name.charAt(0).toUpperCase();
+
+            // Store user data for other uses
+            currentUserProfile = userData;
 
             // Re-render the UI elements that depend on the Total Budget
             if (typeof window.renderBudgetsUI === 'function') window.renderBudgetsUI();
